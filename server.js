@@ -974,4 +974,77 @@ app.post("/api/generate", async (req, res) => {
 
 // ─── BANNER GENERATION ──────────────────────────────────────────────────────
 const BANNER_PROMPTS = {
-  "left-vertical": 
+  "left-vertical": (product, claim) =>
+    `Premium wellness supplement product photography, clean light cream off-white background, deep forest green supplement jar with ROOT LABS branding, ${product} natural ingredients artistically arranged around the jar (herbs, roots, botanicals), soft natural daylight, clean minimal aesthetic, premium health brand, editorial style, NO text overlays, NO words, ultra high quality photography`,
+  "bottom-strip": (product, claim) =>
+    `Wide panoramic lifestyle wellness photography, clean cream background, deep forest green Root Labs supplement jar on the left, ${product} natural ingredients (herbs, plants, roots) scattered elegantly to the right, natural daylight from the side, premium minimal supplement brand, NO text, NO words, ultra high quality`,
+  "right-badge": (product, claim) =>
+    `Close-up macro photograph of ${product} natural ingredients on a clean cream background, deep forest green color accent, golden amber botanicals, premium wellness brand aesthetic, soft natural lighting, minimal clean composition, NO text, NO words, square, ultra high quality`,
+  "full-overlay": (product, claim) =>
+    `Premium supplement lifestyle photography portrait, clean cream background fading to deep forest green at bottom, Root Labs supplement jar centered, ${product} natural ingredients floating elegantly around it, soft studio lighting, premium health brand editorial photography, minimal clean aesthetic, NO text, NO words, portrait orientation, ultra high quality`
+};
+
+const BANNER_SIZES = {
+  "left-vertical": { w: 1024, h: 1792 },
+  "bottom-strip":  { w: 1792, h: 448  },
+  "right-badge":   { w: 1024, h: 1024 },
+  "full-overlay":  { w: 1024, h: 1792 }
+};
+
+app.post("/api/generate-banners", async (req, res) => {
+  const { script, sku, handle } = req.body;
+  if (!script || !sku) return res.status(400).json({ error: "script and sku required" });
+
+  const skuLabels = {
+    "mag-ashwa": "Magnesium Ashwagandha",
+    "alpha-shilajit": "Shilajit",
+    "hair-density": "Hair Growth",
+    "sea-moss": "Sea Moss",
+    "turmeric": "Turmeric Curcumin"
+  };
+  const product = skuLabels[sku] || sku;
+  const claim = (script.hook?.v1 || "").slice(0, 60);
+
+  try {
+    const bannerTypes = ["left-vertical", "bottom-strip", "right-badge", "full-overlay"];
+    const results = {};
+
+    // Generate all 4 in parallel
+    const promises = bannerTypes.map(async (type) => {
+      const prompt = BANNER_PROMPTS[type](product, claim);
+      const size = BANNER_SIZES[type];
+
+      // DALL-E 3 supports 1024x1024, 1792x1024, 1024x1792
+      // Map our sizes to valid DALL-E sizes
+      const dalleSize = type === "bottom-strip" ? "1792x1024" :
+                        type === "right-badge"   ? "1024x1024" :
+                                                   "1024x1792";
+      console.log(`[Banners] Generating ${type} banner for @${handle}...`);
+      const response = await client.images.generate({
+        model: "dall-e-3",
+        prompt: prompt,
+        n: 1,
+        size: dalleSize,
+        quality: "hd",
+        style: "natural"
+      });
+
+      const imageUrl = response.data[0].url;
+      console.log(`[Banners] ${type} done`);
+      return { type, imageUrl };
+    });
+
+    const bannerResults = await Promise.all(promises);
+    bannerResults.forEach(({ type, imageUrl }) => {
+      results[type] = imageUrl;
+    });
+
+    res.json({ success: true, banners: results });
+  } catch (err) {
+    console.error("[Banners] Error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Root Labs Script Gen running on port ${PORT}`));
