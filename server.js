@@ -730,27 +730,36 @@ async function scrapeProfile(handle) {
     let transcripts = [];
 
     if (videoUrls.length > 0) {
-      console.log(`[Scrape] Step 2: fetching transcripts for ${videoUrls.length} videos`);
-      try {
-        // Use the main TikTok scraper with URLs - it returns transcript field
-        const transcriptItems = await runApify(
-          "clockworks~tiktok-scraper",
-          { postURLs: videoUrls, shouldDownloadVideos: false, shouldDownloadCovers: false },
-          APIFY_KEY, 90000
-        );
-        transcripts = transcriptItems
-          .filter(t => t.videoMeta?.subtitleLinks?.length || t.transcript || t.subtitles)
-          .map(t => ({
-            videoUrl: t.webVideoUrl || t.videoUrl || "",
-            transcript: t.transcript || t.subtitles || t.text || "",
-            likes: t.diggCount || 0
-          }))
-          .filter(t => t.transcript && t.transcript.length > 20);
-        console.log(`[Scrape] Got ${transcripts.length} transcripts`);
-      } catch (err) {
-        console.warn("[Scrape] Transcript step failed (non-fatal):", err.message);
-        // Still return profile data without transcripts
-      }
+      console.log(`[Scrape] Step 2: fetching transcripts for ${videoUrls.length} videos via Whisper`);
+      // Run transcript scraper for each video URL in parallel (max 3 to control cost)
+      const urlsToTranscribe = videoUrls.slice(0, 3);
+      const transcriptPromises = urlsToTranscribe.map(async (url) => {
+        try {
+          const items = await runApify(
+            "linen_snack~tiktok-video-transcirpt-using-openai-whisper-api",
+            {
+              tiktokVideoUrl: url,
+              openaiApiKey: process.env.OPENAI_API_KEY,
+              taskType: "transcription",
+              transcriptionModel: "whisper-1",
+              responseFormat: "json"
+            },
+            APIFY_KEY, 90000
+          );
+          const item = items[0];
+          if (!item) return null;
+          const text = item.transcription || item.transcript || item.text || "";
+          if (text.length < 20) return null;
+          console.log(`[Scrape] Transcript for ${url.slice(-30)}: ${text.slice(0, 80)}...`);
+          return { videoUrl: url, transcript: text };
+        } catch (err) {
+          console.warn(`[Scrape] Transcript failed for ${url.slice(-30)}:`, err.message);
+          return null;
+        }
+      });
+      const results = await Promise.all(transcriptPromises);
+      transcripts = results.filter(Boolean);
+      console.log(`[Scrape] Got ${transcripts.length} transcripts`);
     }
 
     return {
