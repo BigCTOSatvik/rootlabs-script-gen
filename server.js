@@ -730,36 +730,41 @@ async function scrapeProfile(handle) {
     let transcripts = [];
 
     if (videoUrls.length > 0) {
-      console.log(`[Scrape] Step 2: fetching transcripts for ${videoUrls.length} videos via Whisper`);
-      // Run transcript scraper for each video URL in parallel (max 3 to control cost)
-      const urlsToTranscribe = videoUrls.slice(0, 3);
-      const transcriptPromises = urlsToTranscribe.map(async (url) => {
-        try {
-          const items = await runApify(
-            "linen_snack~tiktok-video-transcirpt-using-openai-whisper-api",
-            {
-              tiktokVideoUrl: url,
-              openaiApiKey: process.env.OPENAI_API_KEY,
-              taskType: "transcription",
-              transcriptionModel: "whisper-1",
-              responseFormat: "json"
-            },
-            APIFY_KEY, 90000
-          );
-          const item = items[0];
-          if (!item) return null;
-          const text = item.transcription || item.transcript || item.text || "";
-          if (text.length < 20) return null;
-          console.log(`[Scrape] Transcript for ${url.slice(-30)}: ${text.slice(0, 80)}...`);
-          return { videoUrl: url, transcript: text };
-        } catch (err) {
-          console.warn(`[Scrape] Transcript failed for ${url.slice(-30)}:`, err.message);
-          return null;
+      console.log(`[Scrape] Step 2: fetching video detail + subtitles for ${videoUrls.length} videos`);
+      try {
+        const detailItems = await runApify(
+          "clockworks~tiktok-scraper",
+          {
+            postURLs: videoUrls.slice(0, 8),
+            shouldDownloadVideos: false,
+            shouldDownloadCovers: false,
+            shouldDownloadSubtitles: true,
+            shouldDownloadSlideshowImages: false
+          },
+          APIFY_KEY, 60000
+        );
+        console.log(`[Scrape] Detail scraper returned ${detailItems.length} items`);
+        if (detailItems.length > 0) {
+          console.log("[Scrape] Detail item keys:", Object.keys(detailItems[0]).join(", "));
         }
-      });
-      const results = await Promise.all(transcriptPromises);
-      transcripts = results.filter(Boolean);
-      console.log(`[Scrape] Got ${transcripts.length} transcripts`);
+        transcripts = detailItems
+          .map(item => {
+            // Try all known subtitle/transcript fields
+            const subtitles = item.subtitleLinks || item.subtitles || [];
+            const text = item.text || item.desc || "";
+            const videoSubtitle = Array.isArray(subtitles) && subtitles.length > 0
+              ? subtitles.map(s => s.text || s.content || "").filter(Boolean).join(" ")
+              : "";
+            const finalText = videoSubtitle || text;
+            return finalText.length > 20
+              ? { videoUrl: item.webVideoUrl || item.videoUrl || "", transcript: finalText, likes: item.diggCount || 0 }
+              : null;
+          })
+          .filter(Boolean);
+        console.log(`[Scrape] Got ${transcripts.length} usable transcripts/captions from detail scraper`);
+      } catch (err) {
+        console.warn("[Scrape] Detail scraper failed (non-fatal):", err.message);
+      }
     }
 
     return {
