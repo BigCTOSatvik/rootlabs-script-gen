@@ -388,381 +388,372 @@ function dlPDF(){
 
 // ── VISUAL CARDS ─────────────────────────────────────────────────────────────
 
-const SKU_VISUAL_DATA = {
-  "mag-ashwa": {
-    color: "#C88A2A",
-    colorDim: "rgba(200,138,42,0.15)",
-    proofStat: "Sleep Score",
-    proofBefore: "61",
-    proofAfter: "84",
-    proofUnit: "/ 100",
-    mechanism: ["4 absorption pathways", "10 magnesium forms", "Beadlet technology", "Zero added sugar"],
-    mechTitle: "Why it actually works",
-    demoSteps: [
-      {time:"0:00", cue:"Hold jar to camera - label facing out"},
-      {time:"0:05", cue:"Show sleep tracker screenshot (before score)"},
-      {time:"0:12", cue:"Show after score screenshot side by side"},
-      {time:"2:00", cue:"Oil + water demo - 2 glasses ready on table"},
-      {time:"5:00", cue:"Hold up label - point to 10 form list"},
-      {time:"8:00", cue:"Type TIRED prompt - read comments aloud"},
-    ]
-  },
-  "alpha-shilajit": {
-    color: "#8B6914",
-    colorDim: "rgba(139,105,20,0.15)",
-    proofStat: "Energy Level",
-    proofBefore: "Low",
-    proofAfter: "Optimized",
-    proofUnit: "",
-    mechanism: ["85+ trace minerals", "Fulvic acid transport", "Mitochondrial fuel", "Himalayan sourced"],
-    mechTitle: "How shilajit works",
-    demoSteps: [
-      {time:"0:00", cue:"Hold gummy jar - shake it gently"},
-      {time:"0:05", cue:"Show traditional resin vs our gummy"},
-      {time:"0:15", cue:"Bite a gummy on camera - normal taste"},
-      {time:"2:00", cue:"Write MINERALS in comments prompt"},
-      {time:"5:00", cue:"Show mineral count on label"},
-      {time:"8:00", cue:"Type ENERGY prompt - read comments"},
-    ]
-  },
-  "hair-density": {
-    color: "#9B4F96",
-    colorDim: "rgba(155,79,150,0.15)",
-    proofStat: "Hair Shedding",
-    proofBefore: "High",
-    proofAfter: "Reduced",
-    proofUnit: "",
-    mechanism: ["Direct scalp delivery", "No gut loss", "Targets dermal papilla", "Roll-on precision"],
-    mechTitle: "Why topical beats oral",
-    demoSteps: [
-      {time:"0:00", cue:"Show roll-on applicator close up"},
-      {time:"0:05", cue:"Demonstrate rolling motion on scalp"},
-      {time:"0:15", cue:"Compare to pile of capsules/tablets"},
-      {time:"2:00", cue:"Type DRAIN prompt"},
-      {time:"5:00", cue:"Show before/after density photo if available"},
-      {time:"8:00", cue:"Type SHED prompt - read comments"},
-    ]
-  },
-  "sea-moss": {
-    color: "#2A8B6A",
-    colorDim: "rgba(42,139,106,0.15)",
-    proofStat: "Minerals",
-    proofBefore: "0",
-    proofAfter: "92",
-    proofUnit: "daily",
-    mechanism: ["92 minerals daily", "Gut lining support", "Prebiotic fiber", "Wildcrafted Atlantic"],
-    mechTitle: "What 92 minerals does",
-    demoSteps: [
-      {time:"0:00", cue:"Hold jar - show gummy color"},
-      {time:"0:05", cue:"Compare to raw sea moss gel (show messy)"},
-      {time:"0:15", cue:"Eat a gummy - show it tastes normal"},
-      {time:"2:00", cue:"Type GUT prompt"},
-      {time:"5:00", cue:"Point to 92 minerals on label"},
-      {time:"8:00", cue:"Type THYROID prompt - read comments"},
-    ]
-  },
-  "turmeric": {
-    color: "#C87A1A",
-    colorDim: "rgba(200,122,26,0.15)",
-    proofStat: "Absorption",
-    proofBefore: "~3%",
-    proofAfter: "2000%+",
-    proofUnit: "with BioPerine",
-    mechanism: ["BioPerine activates curcumin", "COX-2 pathway", "Blood-brain barrier", "No gut damage"],
-    mechTitle: "Why BioPerine changes everything",
-    demoSteps: [
-      {time:"0:00", cue:"Hold jar + hold kitchen turmeric side by side"},
-      {time:"0:05", cue:"Point to BioPerine on our label"},
-      {time:"0:15", cue:"Show competitor label - no BioPerine"},
-      {time:"2:00", cue:"Type JOINT prompt"},
-      {time:"5:00", cue:"Show label comparison on camera"},
-      {time:"8:00", cue:"Type TRIED prompt - read comments"},
-    ]
-  }
+// ── BANNER SYSTEM ─────────────────────────────────────────────────────────────
+
+const BANNER_PRICES = {
+  "mag-ashwa":      { regular:"$45",   flash:"$22.99" },
+  "alpha-shilajit": { regular:"$42",   flash:"$21.99" },
+  "hair-density":   { regular:"$38",   flash:"$19.99" },
+  "sea-moss":       { regular:"$35",   flash:"$17.99" },
+  "turmeric":       { regular:"$36",   flash:"$18.99" }
 };
 
-function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
-  const words = text.split(" ");
-  let line = "";
-  let currentY = y;
-  for (let i = 0; i < words.length; i++) {
-    const testLine = line + words[i] + " ";
-    if (ctx.measureText(testLine).width > maxWidth && i > 0) {
-      ctx.fillText(line.trim(), x, currentY);
-      line = words[i] + " ";
-      currentY += lineHeight;
-    } else {
-      line = testLine;
-    }
-  }
-  ctx.fillText(line.trim(), x, currentY);
-  return currentY;
+const BANNER_DEFS = [
+  { type:"left-vertical", label:"Left Side Banner",   w:400,  h:700,  hint:"Pin to left of live stream" },
+  { type:"bottom-strip",  label:"Bottom Strip",       w:800,  h:200,  hint:"Pin to bottom of stream" },
+  { type:"right-badge",   label:"Right Price Badge",  w:400,  h:400,  hint:"Pin to top right corner" },
+  { type:"full-overlay",  label:"Full Overlay Card",  w:400,  h:700,  hint:"Hold up to camera" }
+];
+
+const BANNER_COLORS = {
+  "mag-ashwa":      "#C88A2A",
+  "alpha-shilajit": "#A07820",
+  "hair-density":   "#7B3FA0",
+  "sea-moss":       "#1A7A55",
+  "turmeric":       "#C87A1A"
+};
+
+function rr(ctx,x,y,w,h,r,fill,stroke,sw){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r);ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+  ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);
+  ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);
+  ctx.closePath();
+  if(fill){ctx.fillStyle=fill;ctx.fill();}
+  if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=sw||2;ctx.stroke();}
 }
 
-function drawCard(canvas, type, sc, skuKey) {
-  const vd = SKU_VISUAL_DATA[skuKey] || SKU_VISUAL_DATA["mag-ashwa"];
-  const ctx = canvas.getContext("2d");
-  const W = 1080, H = 1080;
-  canvas.width = W; canvas.height = H;
+function wl(ctx,text,maxW){
+  const words=text.split(" ");let line="",lines=[];
+  words.forEach(w=>{
+    const t=line+w+" ";
+    if(ctx.measureText(t).width>maxW&&line){lines.push(line.trim());line=w+" ";}
+    else line=t;
+  });
+  if(line.trim())lines.push(line.trim());
+  return lines;
+}
 
-  // Background
-  ctx.fillStyle = "#0D0C09";
-  ctx.fillRect(0, 0, W, H);
+function compositeLeftVertical(canvas, bgImg, sc, skuKey) {
+  const W=400,H=700; canvas.width=W;canvas.height=H;
+  const ctx=canvas.getContext("2d");
+  const col=BANNER_COLORS[skuKey]||"#C88A2A";
+  const p=BANNER_PRICES[skuKey];
 
-  // Subtle grid pattern
-  ctx.strokeStyle = "rgba(200,138,42,0.04)";
-  ctx.lineWidth = 1;
-  for (let i = 0; i < W; i += 60) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,H); ctx.stroke(); }
-  for (let i = 0; i < H; i += 60) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(W,i); ctx.stroke(); }
+  // Draw DALL-E background
+  ctx.drawImage(bgImg,0,0,W,H);
 
-  // Top bar
-  ctx.fillStyle = vd.color;
-  ctx.fillRect(0, 0, W, 8);
+  // Dark overlay gradient for text readability
+  const ov=ctx.createLinearGradient(0,0,0,H);
+  ov.addColorStop(0,"rgba(0,0,0,0.15)");
+  ov.addColorStop(0.5,"rgba(0,0,0,0.5)");
+  ov.addColorStop(1,"rgba(0,0,0,0.88)");
+  ctx.fillStyle=ov; ctx.fillRect(0,0,W,H);
 
-  // Root Labs brand
-  ctx.fillStyle = vd.color;
-  ctx.font = "600 28px 'DM Sans', sans-serif";
-  ctx.letterSpacing = "4px";
-  ctx.fillText("ROOT LABS", 60, 72);
-  ctx.letterSpacing = "0px";
+  // Left accent bar
+  ctx.fillStyle=col; ctx.fillRect(0,0,6,H);
 
-  ctx.fillStyle = "rgba(200,190,168,0.5)";
-  ctx.font = "400 22px 'DM Sans', sans-serif";
-  ctx.fillText(sc.product, 60, 104);
+  // Brand top
+  ctx.font="700 13px sans-serif";
+  ctx.letterSpacing="2px";
+  ctx.fillStyle="rgba(255,255,255,0.6)";
+  ctx.textAlign="center";
+  ctx.fillText("ROOT LABS",W/2,28);
+  ctx.letterSpacing="0px";
+  ctx.fillStyle=col; ctx.fillRect(W/2-25,33,50,2);
 
-  // Creator handle
-  ctx.fillStyle = "rgba(200,190,168,0.35)";
-  ctx.font = "400 20px 'DM Sans', sans-serif";
-  ctx.textAlign = "right";
-  ctx.fillText(sc.handle, W - 60, 80);
-  ctx.textAlign = "left";
+  // Hook - short punchy claim
+  const hook=(sc.hook?.v1||"").split(/[.!?]/)[0].trim();
+  ctx.font="800 22px sans-serif";
+  ctx.fillStyle="#FFFFFF";
+  ctx.textAlign="center";
+  const hookLines=wl(ctx,hook,W-40);
+  hookLines.slice(0,3).forEach((l,i)=>{
+    ctx.fillStyle=i===0?"#FFFFFF":"rgba(255,255,255,0.85)";
+    ctx.fillText(l,W/2,380+i*32);
+  });
 
-  if (type === "proof") {
-    // PROOF CARD
-    ctx.fillStyle = vd.colorDim;
-    ctx.beginPath();
-    ctx.roundRect(60, 160, W - 120, 420, 20);
-    ctx.fill();
-    ctx.strokeStyle = vd.color + "44";
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-
-    ctx.fillStyle = vd.color;
-    ctx.font = "500 26px 'DM Sans', sans-serif";
-    ctx.fillText(vd.proofStat.toUpperCase(), 100, 225);
-
-    // Before box
-    ctx.fillStyle = "rgba(255,255,255,0.04)";
-    ctx.beginPath(); ctx.roundRect(100, 255, 380, 260, 12); ctx.fill();
-    ctx.fillStyle = "rgba(200,190,168,0.4)";
-    ctx.font = "400 22px 'DM Sans', sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("BEFORE", 290, 305);
-    ctx.fillStyle = "rgba(200,190,168,0.5)";
-    ctx.font = "700 110px 'DM Sans', sans-serif";
-    ctx.fillText(vd.proofBefore, 290, 435);
-    ctx.font = "400 22px 'DM Sans', sans-serif";
-    ctx.fillStyle = "rgba(200,190,168,0.35)";
-    ctx.fillText(vd.proofUnit, 290, 470);
-
-    // After box
-    ctx.fillStyle = vd.colorDim;
-    ctx.beginPath(); ctx.roundRect(600, 255, 380, 260, 12); ctx.fill();
-    ctx.strokeStyle = vd.color + "88";
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    ctx.fillStyle = vd.color;
-    ctx.font = "400 22px 'DM Sans', sans-serif";
-    ctx.fillText("AFTER", 790, 305);
-    ctx.font = "700 110px 'DM Sans', sans-serif";
-    ctx.fillText(vd.proofAfter, 790, 435);
-    ctx.font = "400 22px 'DM Sans', sans-serif";
-    ctx.fillStyle = vd.color + "bb";
-    ctx.fillText(vd.proofUnit, 790, 470);
-
-    ctx.textAlign = "left";
-
-    // Hook text
-    const hook = sc.hook?.v1 || "";
-    ctx.fillStyle = "#F0E8D5";
-    ctx.font = "500 38px 'DM Sans', sans-serif";
-    const hookLines = [];
-    const words = hook.split(" ");
-    let line = "";
-    words.forEach(w => {
-      const test = line + w + " ";
-      if (ctx.measureText(test).width > W - 120 && line) { hookLines.push(line.trim()); line = w + " "; }
-      else line = test;
-    });
-    if (line.trim()) hookLines.push(line.trim());
-    hookLines.slice(0, 4).forEach((l, i) => ctx.fillText(l, 60, 650 + i * 52));
-
-    ctx.fillStyle = vd.color;
-    ctx.font = "500 24px 'DM Sans', sans-serif";
-    ctx.fillText("Hold this up in your first 5 seconds.", 60, 860);
-    ctx.fillStyle = "rgba(200,190,168,0.4)";
-    ctx.font = "400 20px 'DM Sans', sans-serif";
-    ctx.fillText("Show before → then after. Let the numbers speak first.", 60, 900);
-
-  } else if (type === "mechanism") {
-    // MECHANISM CARD
-    ctx.fillStyle = "#F0E8D5";
-    ctx.font = "600 52px 'DM Sans', sans-serif";
-    wrapText(ctx, vd.mechTitle, 60, 200, W - 120, 64);
-
-    vd.mechanism.forEach((item, i) => {
-      const y = 340 + i * 140;
-      // Number circle
-      ctx.fillStyle = vd.colorDim;
-      ctx.beginPath(); ctx.arc(100, y, 44, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = vd.color + "66";
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      ctx.fillStyle = vd.color;
-      ctx.font = "700 32px 'DM Sans', sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText(i + 1, 100, y + 12);
-      ctx.textAlign = "left";
-
-      // Connector line
-      if (i < vd.mechanism.length - 1) {
-        ctx.strokeStyle = vd.color + "22";
-        ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.moveTo(100, y + 44); ctx.lineTo(100, y + 140 - 44); ctx.stroke();
-      }
-
-      // Text
-      ctx.fillStyle = "#F0E8D5";
-      ctx.font = "500 36px 'DM Sans', sans-serif";
-      ctx.fillText(item, 172, y + 12);
-    });
-
-    ctx.fillStyle = vd.color;
-    ctx.font = "400 22px 'DM Sans', sans-serif";
-    ctx.fillText("Teach this. The science is the sell.", 60, 960);
-
-  } else if (type === "demo") {
-    // DEMO CUE CARD
-    ctx.fillStyle = "#F0E8D5";
-    ctx.font = "600 48px 'DM Sans', sans-serif";
-    ctx.fillText("Live demo cues", 60, 195);
-
-    ctx.fillStyle = vd.color;
-    ctx.font = "400 22px 'DM Sans', sans-serif";
-    ctx.fillText("What to do + when to do it", 60, 235);
-
-    vd.demoSteps.forEach((step, i) => {
-      const y = 300 + i * 128;
-      // Time badge
-      ctx.fillStyle = vd.colorDim;
-      ctx.beginPath(); ctx.roundRect(60, y, 130, 46, 8); ctx.fill();
-      ctx.strokeStyle = vd.color + "55";
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-      ctx.fillStyle = vd.color;
-      ctx.font = "700 24px 'DM Sans', sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText(step.time, 125, y + 31);
-      ctx.textAlign = "left";
-
-      // Cue text
-      ctx.fillStyle = "#C8BEA8";
-      ctx.font = "400 28px 'DM Sans', sans-serif";
-      wrapText(ctx, step.cue, 215, y + 31, W - 280, 36);
-    });
-
-    ctx.fillStyle = "rgba(200,190,168,0.3)";
-    ctx.font = "400 20px 'DM Sans', sans-serif";
-    ctx.fillText("Print this or keep it visible on a second screen during your live.", 60, 1030);
-
-  } else if (type === "cheatcard") {
-    // CHEATCARD - condensed key points
-    ctx.fillStyle = "#F0E8D5";
-    ctx.font = "600 48px 'DM Sans', sans-serif";
-    ctx.fillText("Key phrases to repeat", 60, 195);
-
-    const phrases = sc.product.includes("Magnesium") || sc.product.includes("Ashwa")
-      ? ["Tired but wired?", "10 forms, 4 pathways", "No saturation, no bottlenecks", "Beadlet technology", "You're not managing - you're fixing", "Less than your morning coffee"]
-      : SKU_VISUAL_DATA[skuKey]?.mechanism?.map(m => m) || ["Key point 1", "Key point 2", "Key point 3", "Key point 4"];
-
-    phrases.slice(0, 6).forEach((phrase, i) => {
-      const y = 280 + i * 122;
-      ctx.fillStyle = i % 2 === 0 ? "rgba(200,138,42,0.08)" : "rgba(255,255,255,0.03)";
-      ctx.beginPath(); ctx.roundRect(60, y - 38, W - 120, 96, 10); ctx.fill();
-      if (i % 2 === 0) { ctx.strokeStyle = vd.color + "33"; ctx.lineWidth = 1; ctx.stroke(); }
-
-      ctx.fillStyle = i % 2 === 0 ? "#F0E8D5" : "#C8BEA8";
-      ctx.font = i % 2 === 0 ? "600 32px 'DM Sans', sans-serif" : "400 30px 'DM Sans', sans-serif";
-      ctx.fillText(phrase, 96, y + 22);
-    });
-
-    ctx.fillStyle = vd.color;
-    ctx.font = "400 22px 'DM Sans', sans-serif";
-    ctx.fillText("Hold this up. Repeat these. Your audience will remember.", 60, 1022);
+  // Key differentiator line
+  const diff=(sc.positioning||"").split(/[.!?]/)[1]?.trim()||"";
+  if(diff){
+    ctx.font="400 15px sans-serif";
+    ctx.fillStyle="rgba(255,255,255,0.6)";
+    const dl=wl(ctx,diff,W-40);
+    dl.slice(0,2).forEach((l,i)=>ctx.fillText(l,W/2,465+i*22));
   }
 
-  // Bottom watermark
-  ctx.fillStyle = "rgba(200,190,168,0.2)";
-  ctx.font = "400 18px 'DM Sans', sans-serif";
-  ctx.textAlign = "right";
-  ctx.fillText("Root Labs Script Engine", W - 60, H - 30);
-  ctx.textAlign = "left";
+  // Flash price block
+  rr(ctx,20,530,W-40,120,12,col+"dd");
+  ctx.fillStyle="#FFFFFF"; ctx.font="700 13px sans-serif";
+  ctx.letterSpacing="2px"; ctx.textAlign="center";
+  ctx.fillText("⚡ FLASH SALE LIVE NOW",W/2,560);
+  ctx.letterSpacing="0px";
+  ctx.font="900 42px sans-serif";
+  ctx.fillText(p.flash,W/2,608);
+  ctx.font="400 14px sans-serif";
+  ctx.fillStyle="rgba(255,255,255,0.6)";
+  ctx.fillText("was "+p.regular+" · link in bio",W/2,632);
+
+  // Handle
+  ctx.fillStyle="rgba(255,255,255,0.35)";
+  ctx.font="500 12px sans-serif";
+  ctx.fillText(sc.handle,W/2,H-12);
+}
+
+function compositeBottomStrip(canvas, bgImg, sc, skuKey) {
+  const W=800,H=200; canvas.width=W;canvas.height=H;
+  const ctx=canvas.getContext("2d");
+  const col=BANNER_COLORS[skuKey]||"#C88A2A";
+  const p=BANNER_PRICES[skuKey];
+
+  ctx.drawImage(bgImg,0,0,W,H);
+
+  // Dark overlay
+  const ov=ctx.createLinearGradient(0,0,W,0);
+  ov.addColorStop(0,"rgba(0,0,0,0.92)");
+  ov.addColorStop(0.6,"rgba(0,0,0,0.75)");
+  ov.addColorStop(1,"rgba(0,0,0,0.1)");
+  ctx.fillStyle=ov; ctx.fillRect(0,0,W,H);
+
+  // Bottom accent bar
+  ctx.fillStyle=col; ctx.fillRect(0,H-5,W,5);
+
+  // Product name top left
+  ctx.font="600 13px sans-serif";
+  ctx.letterSpacing="2px";
+  ctx.fillStyle=col;
+  ctx.textAlign="left";
+  ctx.fillText("ROOT LABS · "+sc.product.split(" ").slice(0,2).join(" ").toUpperCase(),22,30);
+  ctx.letterSpacing="0px";
+
+  // Hook claim
+  const hook=(sc.hook?.v1||"").split(/[.!?]/)[0].trim();
+  ctx.font="800 32px sans-serif";
+  ctx.fillStyle="#FFFFFF";
+  const lines=wl(ctx,hook,420);
+  lines.slice(0,2).forEach((l,i)=>ctx.fillText(l,22,70+i*38));
+
+  // Price right side
+  rr(ctx,W-220,20,195,160,12,col+"ee");
+  ctx.fillStyle="#FFFFFF"; ctx.font="700 13px sans-serif";
+  ctx.letterSpacing="2px"; ctx.textAlign="center";
+  ctx.fillText("⚡ LIVE PRICE",W-122,52); ctx.letterSpacing="0px";
+  ctx.font="900 52px sans-serif";
+  ctx.fillText(p.flash,W-122,110);
+  ctx.font="400 13px sans-serif";
+  ctx.fillStyle="rgba(255,255,255,0.65)";
+  ctx.fillText("was "+p.regular,W-122,138);
+  ctx.fillStyle=col+"cc"; ctx.font="600 12px sans-serif";
+  ctx.fillText("LINK IN BIO",W-122,162);
+}
+
+function compositeRightBadge(canvas, bgImg, sc, skuKey) {
+  const W=400,H=400; canvas.width=W;canvas.height=H;
+  const ctx=canvas.getContext("2d");
+  const col=BANNER_COLORS[skuKey]||"#C88A2A";
+  const p=BANNER_PRICES[skuKey];
+
+  ctx.drawImage(bgImg,0,0,W,H);
+
+  // Radial overlay
+  const ov=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,W*0.7);
+  ov.addColorStop(0,"rgba(0,0,0,0.1)");
+  ov.addColorStop(1,"rgba(0,0,0,0.75)");
+  ctx.fillStyle=ov; ctx.fillRect(0,0,W,H);
+
+  // Border
+  ctx.strokeStyle=col; ctx.lineWidth=5;
+  ctx.strokeRect(3,3,W-6,H-6);
+
+  // Top label
+  rr(ctx,0,0,W,50,0,col);
+  ctx.fillStyle="#000"; ctx.font="700 13px sans-serif";
+  ctx.letterSpacing="2px"; ctx.textAlign="center";
+  ctx.fillText("⚡ FLASH SALE LIVE NOW",W/2,31);
+  ctx.letterSpacing="0px";
+
+  // Big discount
+  const reg=parseFloat(p.regular.replace("$",""));
+  const fl=parseFloat(p.flash.replace("$",""));
+  const pct=Math.round((1-fl/reg)*100);
+  ctx.font="900 110px sans-serif";
+  ctx.fillStyle=col;
+  ctx.textAlign="center";
+  ctx.fillText(pct+"%",W/2,190);
+  ctx.font="700 28px sans-serif";
+  ctx.fillStyle="#FFFFFF";
+  ctx.fillText("OFF",W/2,230);
+
+  // Price
+  ctx.font="800 44px sans-serif";
+  ctx.fillStyle="#FFFFFF";
+  ctx.fillText(p.flash,W/2,295);
+  ctx.font="400 18px sans-serif";
+  ctx.fillStyle="rgba(255,255,255,0.5)";
+  ctx.fillText("was "+p.regular,W/2,325);
+
+  // Bottom label
+  rr(ctx,0,H-55,W,55,0,col+"cc");
+  ctx.fillStyle="#FFFFFF"; ctx.font="700 14px sans-serif";
+  ctx.letterSpacing="1px"; ctx.textAlign="center";
+  ctx.fillText("MONEY-BACK GUARANTEE · LINK IN BIO",W/2,H-23);
+  ctx.letterSpacing="0px";
+}
+
+function compositeFullOverlay(canvas, bgImg, sc, skuKey) {
+  const W=400,H=700; canvas.width=W;canvas.height=H;
+  const ctx=canvas.getContext("2d");
+  const col=BANNER_COLORS[skuKey]||"#C88A2A";
+  const p=BANNER_PRICES[skuKey];
+
+  ctx.drawImage(bgImg,0,0,W,H);
+
+  // Top gradient overlay
+  const topOv=ctx.createLinearGradient(0,0,0,H*0.45);
+  topOv.addColorStop(0,"rgba(0,0,0,0.85)");
+  topOv.addColorStop(1,"rgba(0,0,0,0)");
+  ctx.fillStyle=topOv; ctx.fillRect(0,0,W,H*0.45);
+
+  // Bottom gradient overlay
+  const botOv=ctx.createLinearGradient(0,H*0.55,0,H);
+  botOv.addColorStop(0,"rgba(0,0,0,0)");
+  botOv.addColorStop(1,"rgba(0,0,0,0.92)");
+  ctx.fillStyle=botOv; ctx.fillRect(0,H*0.55,W,H*0.45);
+
+  // Top - product name
+  ctx.font="700 13px sans-serif";
+  ctx.letterSpacing="2px";
+  ctx.fillStyle=col;
+  ctx.textAlign="center";
+  ctx.fillText("ROOT LABS",W/2,30);
+  ctx.letterSpacing="0px";
+  ctx.fillStyle="rgba(255,255,255,0.7)";
+  ctx.font="600 14px sans-serif";
+  ctx.fillText(sc.product.split(" ").slice(0,3).join(" "),W/2,52);
+
+  // Top accent
+  ctx.fillStyle=col; ctx.fillRect(0,0,W,4);
+
+  // Bottom content
+  const hook=(sc.hook?.v1||"").split(/[.!?]/)[0].trim();
+  ctx.font="800 24px sans-serif";
+  ctx.fillStyle="#FFFFFF";
+  ctx.textAlign="center";
+  const lines=wl(ctx,hook,W-30);
+  lines.slice(0,3).forEach((l,i)=>ctx.fillText(l,W/2,480+i*32));
+
+  // CTA strip
+  rr(ctx,0,590,W,110,0,col);
+  ctx.fillStyle="#000"; ctx.font="700 14px sans-serif";
+  ctx.letterSpacing="1px"; ctx.textAlign="center";
+  ctx.fillText("⚡ LIVE FLASH SALE",W/2,618); ctx.letterSpacing="0px";
+  ctx.font="900 44px sans-serif";
+  ctx.fillStyle="#000";
+  ctx.fillText(p.flash,W/2,662);
+  ctx.font="400 13px sans-serif";
+  ctx.fillStyle="rgba(0,0,0,0.6)";
+  ctx.fillText("was "+p.regular+" · link in bio",W/2,683);
+
+  // Handle
+  ctx.fillStyle="rgba(255,255,255,0.3)";
+  ctx.font="400 12px sans-serif";
+  ctx.fillText(sc.handle,W/2,H-8);
+}
+
+const COMPOSITE_FNS = {
+  "left-vertical": compositeLeftVertical,
+  "bottom-strip":  compositeBottomStrip,
+  "right-badge":   compositeRightBadge,
+  "full-overlay":  compositeFullOverlay
+};
+
+async function renderBannerSection(sc, skuKey) {
+  const section = document.getElementById("vc-section");
+  const grid = document.getElementById("vc-grid");
+  section.style.display = "block";
+  grid.innerHTML = "";
+
+  // Show loading state
+  const loading = document.createElement("div");
+  loading.id = "banner-loading";
+  loading.style.cssText = "grid-column:1/-1;text-align:center;padding:2rem;";
+  loading.innerHTML = `
+    <div style="width:32px;height:32px;border:2px solid var(--border);border-top-color:var(--amber);border-radius:50%;animation:spin 0.9s linear infinite;margin:0 auto 1rem;"></div>
+    <p style="font-size:12px;color:var(--amber);font-family:var(--mono);letter-spacing:.1em;text-transform:uppercase;">Generating AI banners with DALL-E 3...</p>
+    <p style="font-size:11px;color:var(--muted);margin-top:6px;">This takes 20-30 seconds</p>
+  `;
+  grid.appendChild(loading);
+
+  try {
+    const res = await fetch("/api/generate-banners", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ script: sc, sku: skuKey, handle: sc.handle })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) throw new Error(data.error || "Banner generation failed");
+
+    grid.innerHTML = "";
+
+    BANNER_DEFS.forEach(({ type, label, w, h, hint }) => {
+      const wrap = document.createElement("div");
+      wrap.className = "vc-wrap";
+
+      const canvasWrap = document.createElement("div");
+      canvasWrap.className = "vc-canvas-wrap";
+      canvasWrap.style.aspectRatio = w + "/" + h;
+      const canvas = document.createElement("canvas");
+      canvasWrap.appendChild(canvas);
+
+      const footer = document.createElement("div");
+      footer.className = "vc-footer";
+      footer.innerHTML = `
+        <div>
+          <div class="vc-label">${label}</div>
+          <div style="font-size:9px;color:var(--muted);margin-top:2px;font-family:var(--mono);">${hint}</div>
+        </div>
+        <button class="vc-dl" onclick="this.disabled=true;this.textContent='Saving...';
+          const a=document.createElement('a');
+          a.download='${type}_banner.png';
+          a.href=document.getElementById('canvas-${type}').toDataURL('image/png');
+          a.click();
+          setTimeout(()=>{this.disabled=false;this.textContent='Download';},1000);
+        ">Download</button>
+      `;
+      canvas.id = "canvas-" + type;
+      wrap.appendChild(canvasWrap);
+      wrap.appendChild(footer);
+      grid.appendChild(wrap);
+
+      // Load DALL-E image and composite
+      const bgImg = new Image();
+      bgImg.crossOrigin = "anonymous";
+      bgImg.onload = () => {
+        COMPOSITE_FNS[type](canvas, bgImg, sc, skuKey);
+      };
+      bgImg.onerror = () => {
+        // Fallback - render text-only if image fails to load
+        canvas.width = w * 2; canvas.height = h * 2;
+        const ctx = canvas.getContext("2d");
+        const col = BANNER_COLORS[skuKey] || "#C88A2A";
+        ctx.fillStyle = "#0D0C09"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = col; ctx.font = "700 32px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("Banner ready - image loading...", canvas.width/2, canvas.height/2);
+      };
+      bgImg.src = data.banners[type];
+    });
+
+  } catch (err) {
+    grid.innerHTML = `<div style="grid-column:1/-1;padding:1.5rem;background:var(--red-dim);border:1px solid rgba(200,74,42,0.25);border-radius:8px;color:#E08060;font-size:13px;">Banner generation failed: ${err.message}</div>`;
+  }
 }
 
 function renderVisualCards() {
-  const sc = curScript;
-  if (!sc) return;
-  const grid = document.getElementById("vc-grid");
-  grid.innerHTML = "";
-
-  const cards = [
-    { type: "proof",     label: "Proof Card" },
-    { type: "mechanism", label: "Mechanism Card" },
-    { type: "demo",      label: "Demo Cue Card" },
-    { type: "cheatcard", label: "Key Phrases Card" }
-  ];
-
-  cards.forEach(({ type, label }) => {
-    const wrap = document.createElement("div");
-    wrap.className = "vc-wrap";
-
-    const canvasWrap = document.createElement("div");
-    canvasWrap.className = "vc-canvas-wrap";
-    const canvas = document.createElement("canvas");
-    canvasWrap.appendChild(canvas);
-
-    const footer = document.createElement("div");
-    footer.className = "vc-footer";
-
-    const lbl = document.createElement("span");
-    lbl.className = "vc-label";
-    lbl.textContent = label;
-
-    const dlBtn = document.createElement("button");
-    dlBtn.className = "vc-dl";
-    dlBtn.textContent = "Download";
-    dlBtn.onclick = () => {
-      const a = document.createElement("a");
-      a.download = `${curHandle.replace("@","")}_${type}_card.png`;
-      a.href = canvas.toDataURL("image/png");
-      a.click();
-    };
-
-    footer.appendChild(lbl);
-    footer.appendChild(dlBtn);
-    wrap.appendChild(canvasWrap);
-    wrap.appendChild(footer);
-    grid.appendChild(wrap);
-
-    // Draw after DOM insertion so canvas is sized
-    requestAnimationFrame(() => {
-      drawCard(canvas, type, sc, curSku);
-    });
-  });
-
-  const section = document.getElementById("vc-section");
-  section.style.display = "block";
+  renderBannerSection(curScript, curSku);
 }
+
 </script>
 </body>
 </html>
