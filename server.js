@@ -807,56 +807,84 @@ async function generateScript({ handle, sku, desc, profile }) {
     !postSample && !transcriptSample && !desc ? `\nNo profile data available - infer a relatable, conversational tone from the handle name. Write as if they are a health-conscious everyday person.` : null
   ].filter(Boolean).join("\n");
 
-  const systemPrompt = `You are an expert TikTok Live script writer for Root Labs, a premium wellness supplement brand. Your job is to create richly educational, entertainment-first live scripts that teach viewers something real before selling them anything.
+  // ── Derive creator voice profile from transcripts + captions ──
+  const voiceProfile = transcriptSample
+    ? "TRANSCRIPTS TO ANALYZE (read carefully - this is how they actually speak):\n" + transcriptSample
+      + (postSample ? "\n\nCAPTIONS (additional tone signals):\n" + postSample : "")
+    : postSample
+      ? "CAPTIONS (use for tone inference):\n" + postSample
+      : "No content data - infer a warm peer-to-peer conversational tone from the handle.";
 
-PHILOSOPHY: The creator is a knowledgeable friend who discovered something that works - not a salesperson. Every section should be watchable even by people who never buy. Education builds trust. Trust builds conversion.
+  const systemPrompt = `You are writing a TikTok Live script for a specific creator promoting ${product.label} by Root Labs.
 
-${BENCHMARK}
+YOUR MOST IMPORTANT JOB IS THIS: The script must sound like THIS creator and no one else.
+Not a generic wellness influencer. Not a Root Labs spokesperson. THIS creator.
+The product knowledge is reference material. The creator voice is the delivery vehicle.
 
-DEEP PRODUCT KNOWLEDGE - use this to make scripts genuinely educational:
-${product.science}
+══ STEP 1: INTERNALIZE THIS CREATOR'S VOICE ══════════════════════════════
+Handle: @${handle}
+${profile.displayName && profile.displayName !== handle ? "Display name: " + profile.displayName : ""}
+${profile.bio ? 'Bio: "' + profile.bio + '"' : ""}
+${profile.followers ? "Followers: " + Number(profile.followers).toLocaleString() : ""}
+${desc && desc !== "not provided" ? "They describe themselves as: " + desc : ""}
 
-PRODUCT IDENTITY:
-Full name: ${product.label}
-Core promise: ${product.tag}
-Key differentiator: ${product.diff}
-Phrases to weave in naturally: ${product.keyPhrases.join(", ")}
+${voiceProfile}
+
+From the above, identify and lock in:
+- Their sentence rhythm (short/punchy vs flowing/explanatory)
+- Their vocabulary (clinical, casual, street, academic, parent-coded, fitness-bro, etc)
+- Their humor type (dry, self-deprecating, energetic, none)
+- Their relationship with their audience (authority, peer, friend, mentor)
+- Any personal identity they reference (job, family role, age, health journey)
+- How they open content (question, observation, story, fact drop)
+
+Every sentence in this script must pass the test: would THIS person say THIS, in THIS way?
+
+══ STEP 2: PRODUCT KNOWLEDGE ══════════════════════════════════════════════
+Product: ${product.label}
+Promise: ${product.tag}
+What makes it different: ${product.diff}
 Results timeline: ${product.timeline}
-Target audience: ${product.whoItsFor.join(", ")}
-Engagement prompts bank: ${product.engagementPrompts.join(" | ")}
-${product.demoScript ? "Demo idea: " + product.demoScript : ""}
 Pricing: ${product.pricing}
 
-CREATOR PROFILE:
-${creatorContext}
+SCIENCE (your job is to teach this through the creator voice - adapt complexity to their level):
+${product.science}
 
-SCRIPT REQUIREMENTS:
-- Hooks must NOT mention the product name - open with the symptom or problem
-- Positioning must explain the MECHANISM not just the benefit - make them understand WHY it works
-- Social proof must be specific - sleep tracker scores, specific outcomes, not vague "it works"
-- Objection answers must be 2-3 sentences max, conversational, using the same analogy language
-- CTA must have a specific believable reason for the discount and a specific time window
-- Closing must contrast two futures and end with community identity not just discount
-- Every section must sound like THIS CREATOR specifically - use their vocabulary and rhythm from transcripts
+Key phrases to weave in: ${product.keyPhrases.join(", ")}
+Demo idea: ${product.demoScript || "hold product up close, show label"}
+Engagement prompts bank (adapt to creator tone): ${product.engagementPrompts.join(" | ")}
 
-Return ONLY valid JSON, zero extra text, no markdown:
+══ STEP 3: LIVE SCRIPT FRAMEWORK ══════════════════════════════════════════
+${BENCHMARK}
+
+══ GUARDRAILS ══════════════════════════════════════════════════════════════
+- No shame-based or body-shaming hooks
+- No specific percentage claims
+- No retail or store price comparisons (not sold in stores)
+- No medical claims - "supports" not "treats" or "cures"
+- Full product name only - no internal shorthand
+
+══ OUTPUT ══════════════════════════════════════════════════════════════════
+Return ONLY valid JSON, zero extra text, no markdown fences.
+
 {
+  "creatorVoiceSummary": "One sentence describing this creator voice that anchored every section you wrote",
   "hook": {
-    "v1": "problem-led hook - symptom first, no product mention",
-    "v2": "curiosity-led hook - counterintuitive insight that makes them stop scrolling",
-    "v3": "personal story-led hook - creator shares their own experience first"
+    "v1": "problem-led hook in their voice - symptom first, no product name",
+    "v2": "curiosity-led hook in their voice - counterintuitive insight that stops the scroll",
+    "v3": "personal story hook in their voice - their own experience with the problem"
   },
-  "visualHook": "specific physical action to do on camera in first 5 seconds before speaking",
-  "positioning": "3 rich paragraphs: paragraph 1 = the problem they have been dealing with, paragraph 2 = why everything they tried before failed (mechanism), paragraph 3 = what makes this different (the science)",
-  "socialProof": "specific proof section - platform ranking, real outcome language, tracker scores if relevant, community validation",
-  "engagementPrompts": ["prompt 1 - audience segmentation", "prompt 2 - reveals their problem", "prompt 3 - gets them invested in the answer"],
+  "visualHook": "specific camera action for first 5 seconds - must match their content style",
+  "positioning": "3 paragraphs in their voice: problem their audience has, why everything they tried failed (the mechanism), what makes this different (the science simplified to their level)",
+  "socialProof": "proof section in their voice - platform credibility, specific outcome language, tracker scores if relevant",
+  "engagementPrompts": ["prompt 1 adapted to their audience and tone", "prompt 2", "prompt 3"],
   "objections": [
-    {"q": "most common objection verbatim as viewer would type it", "a": "conversational answer using established analogy language"},
-    {"q": "second objection", "a": "answer"},
-    {"q": "third objection", "a": "answer"}
+    {"q": "objection their specific audience would raise", "a": "answer in their voice using analogy language"},
+    {"q": "second objection", "a": "answer in their voice"},
+    {"q": "third objection", "a": "answer in their voice"}
   ],
-  "cta": "flash sale CTA with specific price, specific time window, specific reason for discount, and signal ask",
-  "closing": "closing that paints two futures and ends with community identity"
+  "cta": "flash sale CTA in their voice - specific price, specific time window, believable reason, signal ask",
+  "closing": "closing in their voice - two futures painted, community identity statement, ends with warmth"
 }`;
 
   const response = await client.chat.completions.create({
@@ -866,7 +894,7 @@ Return ONLY valid JSON, zero extra text, no markdown:
       { role: "user", content: "Generate the script now." }
     ],
     temperature: 0.8,
-    max_tokens: 2000
+    max_tokens: 3000
   });
 
   const text = response.choices[0].message.content.trim();
