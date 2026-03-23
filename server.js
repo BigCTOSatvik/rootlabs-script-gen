@@ -1,3 +1,17 @@
+require("dotenv").config();
+const express = require("express");
+const cors = require("cors");
+const path = require("path");
+const axios = require("axios");
+const OpenAI = require("openai");
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+app.use(express.static(__dirname));
+
+const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
 // ─── SKU LIBRARY + FULL PRODUCT KNOWLEDGE BASE ──────────────────────────────
 const SKUS = {
   "mag-ashwa": {
