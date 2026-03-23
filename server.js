@@ -782,7 +782,7 @@ async function generateScript({ handle, sku, desc, profile }) {
   const product = SKUS[sku];
   if (!product) throw new Error("Unknown SKU: " + sku);
 
-  // ── Build rich creator context from Apify profile + transcripts ──
+  // ── Build raw samples ──
   const postSample = (profile?.posts || [])
     .slice(0, 10)
     .map((p, i) => `Caption ${i+1}: "${p.caption}" (${p.likes} likes, ${p.comments} comments)`)
@@ -793,28 +793,27 @@ async function generateScript({ handle, sku, desc, profile }) {
     .map((t, i) => `Video ${i+1} transcript: "${t.transcript.slice(0, 400)}${t.transcript.length > 400 ? "..." : ""}"`)
     .join("\n\n");
 
-  // Log what we have so we can debug
-  console.log(`[Generate] Creator context - source: ${profile?.source}, posts: ${(profile?.posts||[]).length}, transcripts: ${(profile?.transcripts||[]).length}, desc: ${desc}`);
+  // ── Escape backticks FIRST before anything uses safe* variables ──
+  const safeBio = (profile?.bio || "").replace(/`/g, "'");
+  const safeDesc = (desc || "").replace(/`/g, "'");
+  const safePostSample = postSample.replace(/`/g, "'");
+  const safeTranscriptSample = transcriptSample.replace(/`/g, "'");
+  const safeScience = product.science.replace(/`/g, "'");
+  const safeBenchmark = BENCHMARK.replace(/`/g, "'");
+
+  // Log what we have
+  console.log(`[Generate] source: ${profile?.source}, posts: ${(profile?.posts||[]).length}, transcripts: ${(profile?.transcripts||[]).length}, desc: ${desc}`);
 
   const creatorContext = [
     `TikTok handle: @${handle}`,
     profile?.displayName && profile.displayName !== handle ? `Display name: ${profile.displayName}` : null,
-    profile?.bio ? `Bio: "${safeBio}"` : null,
+    safeBio ? `Bio: "${safeBio}"` : null,
     profile?.followers ? `Followers: ${Number(profile.followers).toLocaleString()}` : null,
-    postSample ? `\nRECENT CAPTIONS (analyze these for tone, vocabulary, humor, and how they communicate):\n${postSample}` : null,
-    transcriptSample ? `\nVIDEO TRANSCRIPTS (this is their exact spoken voice - replicate it precisely):\n${transcriptSample}` : null,
-    desc && desc !== "not provided" ? `\nCreator self-description: ${desc}` : null,
-    !postSample && !transcriptSample && !desc ? `\nNo profile data available - infer a relatable, conversational tone from the handle name. Write as if they are a health-conscious everyday person.` : null
+    safePostSample ? `\nRECENT CAPTIONS:\n${safePostSample}` : null,
+    safeTranscriptSample ? `\nVIDEO TRANSCRIPTS:\n${safeTranscriptSample}` : null,
+    safeDesc && safeDesc !== "not provided" ? `\nCreator self-description: ${safeDesc}` : null,
+    !safePostSample && !safeTranscriptSample && !safeDesc ? `\nNo profile data - infer a warm peer-to-peer tone from the handle.` : null
   ].filter(Boolean).join("\n");
-
-  // ── Derive creator voice profile from transcripts + captions ──
-  // Escape backticks to prevent template literal breakage
-  const safeScience = product.science.replace(/`/g, "'");
-  const safeBenchmark = BENCHMARK.replace(/`/g, "'");
-  const safePostSample = postSample.replace(/`/g, "'");
-  const safeTranscriptSample = transcriptSample.replace(/`/g, "'");
-  const safeBio = (profile?.bio || "").replace(/`/g, "'");
-  const safeDesc = (desc || "").replace(/`/g, "'");
 
   const voiceProfile = safeTranscriptSample
     ? "TRANSCRIPTS TO ANALYZE (read carefully - this is how they actually speak):\n" + safeTranscriptSample
