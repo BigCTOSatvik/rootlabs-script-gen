@@ -972,5 +972,6 @@ app.post("/api/generate", async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Root Labs Script Gen running on port ${PORT}`));
+// ─── BANNER GENERATION ──────────────────────────────────────────────────────
+const BANNER_PROMPTS = {
+  "left-vertical": 
