@@ -114,96 +114,107 @@ KEY CONVERTING PHRASES: "Tired but wired" / "10 forms, 4 pathways" / "No saturat
 `;
 
 // ─── SCRAPE ─────────────────────────────────────────────────────────────────
+async function runApify(actorId, input, apiKey, maxWaitMs = 55000) {
+  const runRes = await axios.post(
+    `https://api.apify.com/v2/acts/${actorId}/runs`,
+    input,
+    { headers: { "Content-Type": "application/json" }, params: { token: apiKey }, timeout: 12000 }
+  );
+  const runId = runRes.data.data.id;
+  const datasetId = runRes.data.data.defaultDatasetId;
+  console.log(`Apify [${actorId}] run started: ${runId}`);
+
+  // Poll until done
+  const start = Date.now();
+  let status = "RUNNING";
+  while (status === "RUNNING" && Date.now() - start < maxWaitMs) {
+    await new Promise(r => setTimeout(r, 5000));
+    const s = await axios.get(
+      `https://api.apify.com/v2/actor-runs/${runId}`,
+      { params: { token: apiKey }, timeout: 8000 }
+    );
+    status = s.data.data.status;
+    console.log(`Apify [${actorId}] status: ${status}`);
+  }
+  if (status !== "SUCCEEDED") throw new Error(`Actor ${actorId} did not succeed: ${status}`);
+
+  const res = await axios.get(
+    `https://api.apify.com/v2/datasets/${datasetId}/items`,
+    { params: { token: apiKey, limit: 30 }, timeout: 10000 }
+  );
+  return res.data || [];
+}
+
 async function scrapeProfile(handle) {
   const clean = handle.replace("@", "").trim();
   const APIFY_KEY = process.env.APIFY_API_KEY;
 
   if (!APIFY_KEY) {
     console.log("No Apify key - using fallback");
-    return { handle: clean, displayName: clean, bio: "", posts: [], source: "fallback" };
+    return { handle: clean, displayName: clean, bio: "", posts: [], transcripts: [], source: "fallback" };
   }
 
   try {
-    console.log(`Scraping @${clean} via Apify...`);
-
-    // Start the Apify actor run
-    const runRes = await axios.post(
-      `https://api.apify.com/v2/acts/clockworks~tiktok-profile-scraper/runs`,
-      {
-        profiles: [clean],
-        resultsPerPage: 20,
-        profileScrapeSections: ["videos"]
-      },
-      {
-        headers: { "Content-Type": "application/json" },
-        params: { token: APIFY_KEY, timeout: 60 },
-        timeout: 10000
-      }
+    // ── STEP 1: Profile scraper - get bio, captions, video URLs ──
+    console.log(`Step 1: Scraping @${clean} profile...`);
+    const profileItems = await runApify(
+      "clockworks~tiktok-profile-scraper",
+      { profiles: [clean], resultsPerPage: 20, profileScrapeSections: ["videos"] },
+      APIFY_KEY, 55000
     );
 
-    const runId = runRes.data.data.id;
-    console.log(`Apify run started: ${runId}`);
+    if (!profileItems.length) throw new Error("No profile data returned");
 
-    // Poll for completion (max 50 seconds)
-    let status = "RUNNING";
-    let attempts = 0;
-    while (status === "RUNNING" && attempts < 10) {
-      await new Promise(r => setTimeout(r, 5000));
-      const statusRes = await axios.get(
-        `https://api.apify.com/v2/actor-runs/${runId}`,
-        { params: { token: APIFY_KEY }, timeout: 8000 }
-      );
-      status = statusRes.data.data.status;
-      attempts++;
-      console.log(`Apify status: ${status} (attempt ${attempts})`);
-    }
-
-    if (status !== "SUCCEEDED") {
-      throw new Error(`Apify run did not succeed: ${status}`);
-    }
-
-    // Fetch results
-    const datasetId = runRes.data.data.defaultDatasetId;
-    const resultsRes = await axios.get(
-      `https://api.apify.com/v2/datasets/${datasetId}/items`,
-      { params: { token: APIFY_KEY, limit: 25 }, timeout: 8000 }
-    );
-
-    const items = resultsRes.data || [];
-    console.log(`Apify returned ${items.length} items`);
-
-    if (!items.length) throw new Error("No data returned");
-
-    // Extract profile info from first item
-    const first = items[0];
+    const first = profileItems[0];
     const displayName = first.authorMeta?.name || first.author?.nickname || clean;
     const bio = first.authorMeta?.signature || first.author?.signature || "";
     const followers = first.authorMeta?.fans || first.author?.followerCount || 0;
 
-    // Extract post captions for tone analysis
-    const posts = items
+    // Extract captions + video URLs, sort by engagement
+    const posts = profileItems
       .filter(item => item.text || item.desc)
-      .slice(0, 20)
       .map(item => ({
         caption: item.text || item.desc || "",
+        videoUrl: item.webVideoUrl || item.videoUrl || null,
         likes: item.diggCount || item.stats?.diggCount || 0,
         comments: item.commentCount || item.stats?.commentCount || 0,
         shares: item.shareCount || item.stats?.shareCount || 0
-      }));
+      }))
+      .sort((a, b) => (b.likes + b.comments * 3) - (a.likes + a.comments * 3));
 
-    return {
-      handle: clean,
-      displayName,
-      bio,
-      followers,
-      posts,
-      source: "apify"
-    };
+    // ── STEP 2: Transcript scraper - top 6 videos by engagement ──
+    const videoUrls = posts
+      .filter(p => p.videoUrl)
+      .slice(0, 6)
+      .map(p => p.videoUrl);
+
+    let transcripts = [];
+    if (videoUrls.length > 0) {
+      console.log(`Step 2: Getting transcripts for ${videoUrls.length} top videos...`);
+      try {
+        const transcriptItems = await runApify(
+          "streamers~tiktok-transcript-scraper",
+          { videoUrls },
+          APIFY_KEY, 90000
+        );
+        transcripts = transcriptItems
+          .filter(t => t.transcript || t.text)
+          .map(t => ({
+            videoUrl: t.videoUrl || t.url || "",
+            transcript: t.transcript || t.text || "",
+            likes: t.diggCount || 0
+          }));
+        console.log(`Got ${transcripts.length} transcripts`);
+      } catch (transcriptErr) {
+        console.warn("Transcript scraper failed (non-fatal):", transcriptErr.message);
+      }
+    }
+
+    return { handle: clean, displayName, bio, followers, posts: posts.slice(0, 15), transcripts, source: "apify" };
 
   } catch (err) {
     console.error("Apify scrape failed:", err.message);
-    // Graceful fallback - still generate, just without real data
-    return { handle: clean, displayName: clean, bio: "", posts: [], source: "fallback" };
+    return { handle: clean, displayName: clean, bio: "", posts: [], transcripts: [], source: "fallback" };
   }
 }
 
@@ -212,19 +223,24 @@ async function generateScript({ handle, sku, desc, profile }) {
   const product = SKUS[sku];
   if (!product) throw new Error("Unknown SKU: " + sku);
 
-  // Apify-powered creator context
+  // ── Build rich creator context from Apify profile + transcripts ──
   const postSample = (profile?.posts || [])
-    .sort((a, b) => (b.likes + b.comments) - (a.likes + a.comments))
-    .slice(0, 12)
-    .map((p, i) => `Post ${i+1}: "${p.caption}" (${p.likes} likes, ${p.comments} comments)`)
+    .slice(0, 10)
+    .map((p, i) => `Caption ${i+1}: "${p.caption}" (${p.likes} likes, ${p.comments} comments)`)
     .join("\n");
+
+  const transcriptSample = (profile?.transcripts || [])
+    .slice(0, 4)
+    .map((t, i) => `Video ${i+1} transcript: "${t.transcript.slice(0, 400)}${t.transcript.length > 400 ? "..." : ""}"`)
+    .join("\n\n");
 
   const creatorContext = [
     `TikTok handle: @${handle}`,
     profile?.displayName && profile.displayName !== handle ? `Display name: ${profile.displayName}` : null,
     profile?.bio ? `Bio: "${profile.bio}"` : null,
     profile?.followers ? `Followers: ${Number(profile.followers).toLocaleString()}` : null,
-    profile?.source === "apify" && postSample ? `\nRECENT POSTS (use to infer tone, vocabulary, humor, audience):\n${postSample}` : null,
+    profile?.source === "apify" && postSample ? `\nRECENT CAPTIONS (tone + vocabulary signals):\n${postSample}` : null,
+    profile?.source === "apify" && transcriptSample ? `\nVIDEO TRANSCRIPTS (this is how they actually speak - match this voice exactly):\n${transcriptSample}` : null,
     desc && desc !== "not provided" ? `\nCreator says about themselves: ${desc}` : null
   ].filter(Boolean).join("\n");
 
