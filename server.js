@@ -650,35 +650,36 @@ KEY PHRASES THAT CONVERT:
 `;
 
 // ─── SCRAPE ─────────────────────────────────────────────────────────────────
-async function runApify(actorId, input, apiKey, maxWaitMs = 55000) {
+async function runApify(actorId, input, apiKey, maxWaitMs = 60000) {
   const runRes = await axios.post(
     `https://api.apify.com/v2/acts/${actorId}/runs`,
     input,
-    { headers: { "Content-Type": "application/json" }, params: { token: apiKey }, timeout: 12000 }
+    { headers: { "Content-Type": "application/json" }, params: { token: apiKey }, timeout: 15000 }
   );
   const runId = runRes.data.data.id;
   const datasetId = runRes.data.data.defaultDatasetId;
-  console.log(`Apify [${actorId}] run started: ${runId}`);
+  console.log(`[Apify] ${actorId} started - run: ${runId}`);
 
-  // Poll until done
   const start = Date.now();
   let status = "RUNNING";
   while (status === "RUNNING" && Date.now() - start < maxWaitMs) {
     await new Promise(r => setTimeout(r, 5000));
     const s = await axios.get(
       `https://api.apify.com/v2/actor-runs/${runId}`,
-      { params: { token: apiKey }, timeout: 8000 }
+      { params: { token: apiKey }, timeout: 10000 }
     );
     status = s.data.data.status;
-    console.log(`Apify [${actorId}] status: ${status}`);
+    console.log(`[Apify] ${actorId} status: ${status} (${Math.round((Date.now()-start)/1000)}s)`);
   }
-  if (status !== "SUCCEEDED") throw new Error(`Actor ${actorId} did not succeed: ${status}`);
+  if (status !== "SUCCEEDED") throw new Error(`${actorId} ended with status: ${status}`);
 
   const res = await axios.get(
     `https://api.apify.com/v2/datasets/${datasetId}/items`,
     { params: { token: apiKey, limit: 30 }, timeout: 10000 }
   );
-  return res.data || [];
+  const items = res.data || [];
+  console.log(`[Apify] ${actorId} returned ${items.length} items`);
+  return items;
 }
 
 async function scrapeProfile(handle) {
@@ -686,70 +687,84 @@ async function scrapeProfile(handle) {
   const APIFY_KEY = process.env.APIFY_API_KEY;
 
   if (!APIFY_KEY) {
-    console.log("No Apify key - using fallback");
+    console.log("[Scrape] No Apify key - using fallback");
     return { handle: clean, displayName: clean, bio: "", posts: [], transcripts: [], source: "fallback" };
   }
 
   try {
-    // ── STEP 1: Profile scraper - get bio, captions, video URLs ──
-    console.log(`Step 1: Scraping @${clean} profile...`);
+    // ── STEP 1: Profile scraper ──────────────────────────────────────
+    console.log(`[Scrape] Step 1: scraping @${clean} profile`);
     const profileItems = await runApify(
       "clockworks~tiktok-profile-scraper",
       { profiles: [clean], resultsPerPage: 20, profileScrapeSections: ["videos"] },
-      APIFY_KEY, 55000
+      APIFY_KEY, 60000
     );
 
-    if (!profileItems.length) throw new Error("No profile data returned");
+    if (!profileItems.length) throw new Error("Profile scraper returned no data");
+
+    // Log first item keys so we know what fields are available
+    console.log("[Scrape] First item keys:", Object.keys(profileItems[0]).join(", "));
 
     const first = profileItems[0];
-    const displayName = first.authorMeta?.name || first.author?.nickname || clean;
+    const displayName = first.authorMeta?.name || first.authorMeta?.nickName || first.author?.nickname || clean;
     const bio = first.authorMeta?.signature || first.author?.signature || "";
-    const followers = first.authorMeta?.fans || first.author?.followerCount || 0;
+    const followers = first.authorMeta?.fans || first.authorMeta?.followers || first.author?.followerCount || 0;
 
-    // Extract captions + video URLs, sort by engagement
+    // Extract posts - try all known field names for captions and video URLs
     const posts = profileItems
-      .filter(item => item.text || item.desc)
       .map(item => ({
-        caption: item.text || item.desc || "",
-        videoUrl: item.webVideoUrl || item.videoUrl || null,
-        likes: item.diggCount || item.stats?.diggCount || 0,
+        caption: item.text || item.desc || item.description || "",
+        videoUrl: item.webVideoUrl || item.videoUrl || item.video?.playAddr || item.videoMeta?.downloadAddr || null,
+        likes: item.diggCount || item.likeCount || item.stats?.diggCount || 0,
         comments: item.commentCount || item.stats?.commentCount || 0,
         shares: item.shareCount || item.stats?.shareCount || 0
       }))
+      .filter(p => p.caption)
       .sort((a, b) => (b.likes + b.comments * 3) - (a.likes + a.comments * 3));
 
-    // ── STEP 2: Transcript scraper - top 6 videos by engagement ──
-    const videoUrls = posts
-      .filter(p => p.videoUrl)
-      .slice(0, 6)
-      .map(p => p.videoUrl);
+    console.log(`[Scrape] Got ${posts.length} posts, ${posts.filter(p => p.videoUrl).length} with video URLs`);
+    if (posts.length > 0) console.log("[Scrape] Sample caption:", posts[0].caption.slice(0, 100));
 
+    // ── STEP 2: Transcripts via clockworks scraper with transcript option ──
+    const videoUrls = posts.filter(p => p.videoUrl).slice(0, 5).map(p => p.videoUrl);
     let transcripts = [];
+
     if (videoUrls.length > 0) {
-      console.log(`Step 2: Getting transcripts for ${videoUrls.length} top videos...`);
+      console.log(`[Scrape] Step 2: fetching transcripts for ${videoUrls.length} videos`);
       try {
+        // Use the main TikTok scraper with URLs - it returns transcript field
         const transcriptItems = await runApify(
-          "streamers~tiktok-transcript-scraper",
-          { videoUrls },
+          "clockworks~tiktok-scraper",
+          { postURLs: videoUrls, shouldDownloadVideos: false, shouldDownloadCovers: false },
           APIFY_KEY, 90000
         );
         transcripts = transcriptItems
-          .filter(t => t.transcript || t.text)
+          .filter(t => t.videoMeta?.subtitleLinks?.length || t.transcript || t.subtitles)
           .map(t => ({
-            videoUrl: t.videoUrl || t.url || "",
-            transcript: t.transcript || t.text || "",
+            videoUrl: t.webVideoUrl || t.videoUrl || "",
+            transcript: t.transcript || t.subtitles || t.text || "",
             likes: t.diggCount || 0
-          }));
-        console.log(`Got ${transcripts.length} transcripts`);
-      } catch (transcriptErr) {
-        console.warn("Transcript scraper failed (non-fatal):", transcriptErr.message);
+          }))
+          .filter(t => t.transcript && t.transcript.length > 20);
+        console.log(`[Scrape] Got ${transcripts.length} transcripts`);
+      } catch (err) {
+        console.warn("[Scrape] Transcript step failed (non-fatal):", err.message);
+        // Still return profile data without transcripts
       }
     }
 
-    return { handle: clean, displayName, bio, followers, posts: posts.slice(0, 15), transcripts, source: "apify" };
+    return {
+      handle: clean,
+      displayName,
+      bio,
+      followers,
+      posts: posts.slice(0, 15),
+      transcripts,
+      source: "apify"
+    };
 
   } catch (err) {
-    console.error("Apify scrape failed:", err.message);
+    console.error("[Scrape] Failed:", err.message);
     return { handle: clean, displayName: clean, bio: "", posts: [], transcripts: [], source: "fallback" };
   }
 }
@@ -770,14 +785,18 @@ async function generateScript({ handle, sku, desc, profile }) {
     .map((t, i) => `Video ${i+1} transcript: "${t.transcript.slice(0, 400)}${t.transcript.length > 400 ? "..." : ""}"`)
     .join("\n\n");
 
+  // Log what we have so we can debug
+  console.log(`[Generate] Creator context - source: ${profile?.source}, posts: ${(profile?.posts||[]).length}, transcripts: ${(profile?.transcripts||[]).length}, desc: ${desc}`);
+
   const creatorContext = [
     `TikTok handle: @${handle}`,
     profile?.displayName && profile.displayName !== handle ? `Display name: ${profile.displayName}` : null,
     profile?.bio ? `Bio: "${profile.bio}"` : null,
     profile?.followers ? `Followers: ${Number(profile.followers).toLocaleString()}` : null,
-    profile?.source === "apify" && postSample ? `\nRECENT CAPTIONS (tone + vocabulary signals):\n${postSample}` : null,
-    profile?.source === "apify" && transcriptSample ? `\nVIDEO TRANSCRIPTS (this is how they actually speak - match this voice exactly):\n${transcriptSample}` : null,
-    desc && desc !== "not provided" ? `\nCreator says about themselves: ${desc}` : null
+    postSample ? `\nRECENT CAPTIONS (analyze these for tone, vocabulary, humor, and how they communicate):\n${postSample}` : null,
+    transcriptSample ? `\nVIDEO TRANSCRIPTS (this is their exact spoken voice - replicate it precisely):\n${transcriptSample}` : null,
+    desc && desc !== "not provided" ? `\nCreator self-description: ${desc}` : null,
+    !postSample && !transcriptSample && !desc ? `\nNo profile data available - infer a relatable, conversational tone from the handle name. Write as if they are a health-conscious everyday person.` : null
   ].filter(Boolean).join("\n");
 
   const systemPrompt = `You are an expert TikTok Live script writer for Root Labs, a premium wellness supplement brand. Your job is to create richly educational, entertainment-first live scripts that teach viewers something real before selling them anything.
@@ -849,6 +868,26 @@ Return ONLY valid JSON, zero extra text, no markdown:
 
 // ─── ROUTES ─────────────────────────────────────────────────────────────────
 app.get("/health", (_, res) => res.json({ status: "ok" }));
+
+// Debug endpoint - see raw Apify data for any handle
+app.get("/api/debug/:handle", async (req, res) => {
+  try {
+    const profile = await scrapeProfile(req.params.handle);
+    res.json({
+      source: profile.source,
+      displayName: profile.displayName,
+      bio: profile.bio,
+      followers: profile.followers,
+      postCount: profile.posts.length,
+      transcriptCount: profile.transcripts.length,
+      sampleCaptions: profile.posts.slice(0, 3).map(p => p.caption),
+      sampleTranscripts: profile.transcripts.slice(0, 2).map(t => t.transcript.slice(0, 200)),
+      hasVideoUrls: profile.posts.filter(p => p.videoUrl).length
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 app.post("/api/generate", async (req, res) => {
   const { handle, sku, desc } = req.body;
