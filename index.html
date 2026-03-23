@@ -405,12 +405,22 @@ const BANNER_DEFS = [
   { type:"full-overlay",  label:"Full Overlay Card",  w:400,  h:700,  hint:"Hold up to camera" }
 ];
 
+// Root Labs actual brand colors
+const RL_GREEN   = "#1A3D2B";   // deep forest green - primary
+const RL_GREEN_L = "#2A5C40";   // lighter green
+const RL_CREAM   = "#FAF8F2";   // off-white cream - background
+const RL_CREAM_D = "#F0EBE0";   // darker cream
+const RL_AMBER   = "#C8861A";   // warm amber - accent
+const RL_AMBER_L = "#E8A830";   // lighter amber
+const RL_WHITE   = "#FFFFFF";
+const RL_DARK    = "#0F1F17";   // near-black green
+
 const BANNER_COLORS = {
-  "mag-ashwa":      "#C88A2A",
-  "alpha-shilajit": "#A07820",
-  "hair-density":   "#7B3FA0",
-  "sea-moss":       "#1A7A55",
-  "turmeric":       "#C87A1A"
+  "mag-ashwa":      { green: RL_GREEN, amber: "#C8861A", cream: RL_CREAM },
+  "alpha-shilajit": { green: "#1F3A28", amber: "#A07820", cream: RL_CREAM },
+  "hair-density":   { green: "#2A3040", amber: "#7B5FA0", cream: RL_CREAM },
+  "sea-moss":       { green: "#1A3D30", amber: "#1A9A65", cream: RL_CREAM },
+  "turmeric":       { green: "#3D2A1A", amber: "#C87A1A", cream: "#FFF8F0" }
 };
 
 function rr(ctx,x,y,w,h,r,fill,stroke,sw){
@@ -436,237 +446,293 @@ function wl(ctx,text,maxW){
 }
 
 function compositeLeftVertical(canvas, bgImg, sc, skuKey) {
-  const W=400,H=700; canvas.width=W;canvas.height=H;
+  const W=400, H=700;
+  canvas.width=W; canvas.height=H;
   const ctx=canvas.getContext("2d");
-  const col=BANNER_COLORS[skuKey]||"#C88A2A";
-  const p=BANNER_PRICES[skuKey];
+  const col = BANNER_COLORS[skuKey] || BANNER_COLORS["mag-ashwa"];
+  const p = BANNER_PRICES[skuKey];
 
-  // Draw DALL-E background
-  ctx.drawImage(bgImg,0,0,W,H);
+  // Draw AI background
+  ctx.drawImage(bgImg, 0, 0, W, H);
 
-  // Dark overlay gradient for text readability
-  const ov=ctx.createLinearGradient(0,0,0,H);
-  ov.addColorStop(0,"rgba(0,0,0,0.15)");
-  ov.addColorStop(0.5,"rgba(0,0,0,0.5)");
-  ov.addColorStop(1,"rgba(0,0,0,0.88)");
-  ctx.fillStyle=ov; ctx.fillRect(0,0,W,H);
+  // Bottom dark green panel
+  const panelH = 260;
+  ctx.fillStyle = col.green + "F5";
+  ctx.fillRect(0, H - panelH, W, panelH);
 
-  // Left accent bar
-  ctx.fillStyle=col; ctx.fillRect(0,0,6,H);
+  // Top subtle cream overlay for readability
+  const topOv = ctx.createLinearGradient(0, 0, 0, 120);
+  topOv.addColorStop(0, "rgba(250,248,242,0.7)");
+  topOv.addColorStop(1, "rgba(250,248,242,0)");
+  ctx.fillStyle = topOv; ctx.fillRect(0, 0, W, 120);
 
-  // Brand top
-  ctx.font="700 13px sans-serif";
-  ctx.letterSpacing="2px";
-  ctx.fillStyle="rgba(255,255,255,0.6)";
-  ctx.textAlign="center";
-  ctx.fillText("ROOT LABS",W/2,28);
-  ctx.letterSpacing="0px";
-  ctx.fillStyle=col; ctx.fillRect(W/2-25,33,50,2);
+  // Top - ROOT LABS branding
+  ctx.fillStyle = col.green;
+  ctx.font = "800 14px sans-serif";
+  ctx.letterSpacing = "3px";
+  ctx.textAlign = "left";
+  ctx.fillText("ROOT", 20, 36);
+  ctx.fillStyle = col.amber;
+  ctx.fillText("LABS", 20, 56);
+  ctx.letterSpacing = "0px";
+  // Green accent line
+  ctx.fillStyle = col.green;
+  ctx.fillRect(20, 64, 50, 3);
 
-  // Hook - short punchy claim
-  const hook=(sc.hook?.v1||"").split(/[.!?]/)[0].trim();
-  ctx.font="800 22px sans-serif";
-  ctx.fillStyle="#FFFFFF";
-  ctx.textAlign="center";
-  const hookLines=wl(ctx,hook,W-40);
-  hookLines.slice(0,3).forEach((l,i)=>{
-    ctx.fillStyle=i===0?"#FFFFFF":"rgba(255,255,255,0.85)";
-    ctx.fillText(l,W/2,380+i*32);
+  // Product name in amber on green panel
+  ctx.fillStyle = col.amber;
+  ctx.font = "600 13px sans-serif";
+  ctx.letterSpacing = "1.5px";
+  ctx.textAlign = "left";
+  const pname = sc.product.replace("Liposomal Magnesium Ashwagandha Gummies", "MAG+ASHWAGANDHA")
+                           .replace("Alpha Shilajit Gummies", "PURE HIMALAYAN SHILAJIT")
+                           .replace("Hair Density Roll-On", "HAIR DENSITY ROLL-ON")
+                           .replace("Sea Moss Gummies", "MINERAL DENSE SEA MOSS")
+                           .replace("Turmeric Gummies", "TURMERIC + BIOPERINE").toUpperCase();
+  ctx.fillText(pname, 20, H - panelH + 30);
+  ctx.letterSpacing = "0px";
+
+  // Key hook claim
+  const hook = (sc.hook?.v1 || "").split(/[.!?]/)[0].trim();
+  ctx.fillStyle = "#FFFFFF";
+  ctx.font = "700 22px sans-serif";
+  ctx.textAlign = "left";
+  const hookLines = wl(ctx, hook, W - 40);
+  hookLines.slice(0, 3).forEach((l, i) => {
+    ctx.fillStyle = i === 0 ? "#FFFFFF" : "rgba(255,255,255,0.8)";
+    ctx.fillText(l, 20, H - panelH + 62 + i * 30);
   });
 
-  // Key differentiator line
-  const diff=(sc.positioning||"").split(/[.!?]/)[1]?.trim()||"";
-  if(diff){
-    ctx.font="400 15px sans-serif";
-    ctx.fillStyle="rgba(255,255,255,0.6)";
-    const dl=wl(ctx,diff,W-40);
-    dl.slice(0,2).forEach((l,i)=>ctx.fillText(l,W/2,465+i*22));
-  }
+  // Divider
+  ctx.fillStyle = "rgba(255,255,255,0.15)";
+  ctx.fillRect(20, H - 120, W - 40, 1);
 
-  // Flash price block
-  rr(ctx,20,530,W-40,120,12,col+"dd");
-  ctx.fillStyle="#FFFFFF"; ctx.font="700 13px sans-serif";
-  ctx.letterSpacing="2px"; ctx.textAlign="center";
-  ctx.fillText("⚡ FLASH SALE LIVE NOW",W/2,560);
-  ctx.letterSpacing="0px";
-  ctx.font="900 42px sans-serif";
-  ctx.fillText(p.flash,W/2,608);
-  ctx.font="400 14px sans-serif";
-  ctx.fillStyle="rgba(255,255,255,0.6)";
-  ctx.fillText("was "+p.regular+" · link in bio",W/2,632);
+  // Flash price area
+  ctx.fillStyle = col.amber;
+  ctx.font = "700 11px sans-serif";
+  ctx.letterSpacing = "2px";
+  ctx.textAlign = "left";
+  ctx.fillText("⚡ LIVE FLASH PRICE", 20, H - 95);
+  ctx.letterSpacing = "0px";
 
-  // Handle
-  ctx.fillStyle="rgba(255,255,255,0.35)";
-  ctx.font="500 12px sans-serif";
-  ctx.fillText(sc.handle,W/2,H-12);
+  ctx.fillStyle = "#FFFFFF";
+  ctx.font = "900 44px sans-serif";
+  ctx.fillText(p.flash, 20, H - 50);
+
+  ctx.fillStyle = "rgba(255,255,255,0.45)";
+  ctx.font = "400 14px sans-serif";
+  ctx.fillText("was " + p.regular + "  ·  link in bio", 20, H - 28);
 }
 
 function compositeBottomStrip(canvas, bgImg, sc, skuKey) {
-  const W=800,H=200; canvas.width=W;canvas.height=H;
+  const W=800, H=200;
+  canvas.width=W; canvas.height=H;
   const ctx=canvas.getContext("2d");
-  const col=BANNER_COLORS[skuKey]||"#C88A2A";
-  const p=BANNER_PRICES[skuKey];
+  const col = BANNER_COLORS[skuKey] || BANNER_COLORS["mag-ashwa"];
+  const p = BANNER_PRICES[skuKey];
 
-  ctx.drawImage(bgImg,0,0,W,H);
+  // Background - split design
+  // Left: deep green panel
+  ctx.fillStyle = col.green;
+  ctx.fillRect(0, 0, W * 0.45, H);
+  // Right: AI image
+  ctx.drawImage(bgImg, W * 0.35, 0, W * 0.65, H);
+  // Blend overlay
+  const blend = ctx.createLinearGradient(W * 0.35, 0, W * 0.6, 0);
+  blend.addColorStop(0, col.green);
+  blend.addColorStop(1, "rgba(26,61,43,0)");
+  ctx.fillStyle = blend; ctx.fillRect(W * 0.35, 0, W * 0.35, H);
 
-  // Dark overlay
-  const ov=ctx.createLinearGradient(0,0,W,0);
-  ov.addColorStop(0,"rgba(0,0,0,0.92)");
-  ov.addColorStop(0.6,"rgba(0,0,0,0.75)");
-  ov.addColorStop(1,"rgba(0,0,0,0.1)");
-  ctx.fillStyle=ov; ctx.fillRect(0,0,W,H);
+  // Top accent line
+  ctx.fillStyle = col.amber; ctx.fillRect(0, 0, W, 5);
 
-  // Bottom accent bar
-  ctx.fillStyle=col; ctx.fillRect(0,H-5,W,5);
+  // ROOT LABS on green panel
+  ctx.fillStyle = "#FFFFFF";
+  ctx.font = "800 13px sans-serif";
+  ctx.letterSpacing = "3px";
+  ctx.textAlign = "left";
+  ctx.fillText("ROOT", 24, 35);
+  ctx.fillStyle = col.amber;
+  ctx.fillText("LABS", 24, 53);
+  ctx.letterSpacing = "0px";
 
-  // Product name top left
-  ctx.font="600 13px sans-serif";
-  ctx.letterSpacing="2px";
-  ctx.fillStyle=col;
-  ctx.textAlign="left";
-  ctx.fillText("ROOT LABS · "+sc.product.split(" ").slice(0,2).join(" ").toUpperCase(),22,30);
-  ctx.letterSpacing="0px";
+  // Hook text
+  const hook = (sc.hook?.v1 || "").split(/[.!?]/)[0].trim();
+  ctx.fillStyle = "#FFFFFF";
+  ctx.font = "700 26px sans-serif";
+  ctx.textAlign = "left";
+  const lines = wl(ctx, hook, W * 0.4);
+  lines.slice(0, 2).forEach((l, i) => ctx.fillText(l, 24, 90 + i * 34));
 
-  // Hook claim
-  const hook=(sc.hook?.v1||"").split(/[.!?]/)[0].trim();
-  ctx.font="800 32px sans-serif";
-  ctx.fillStyle="#FFFFFF";
-  const lines=wl(ctx,hook,420);
-  lines.slice(0,2).forEach((l,i)=>ctx.fillText(l,22,70+i*38));
+  // Price - right side of green area
+  ctx.fillStyle = col.amber;
+  ctx.font = "700 11px sans-serif";
+  ctx.letterSpacing = "1.5px";
+  ctx.textAlign = "left";
+  ctx.fillText("⚡ FLASH SALE", 24, H - 45);
+  ctx.letterSpacing = "0px";
 
-  // Price right side
-  rr(ctx,W-220,20,195,160,12,col+"ee");
-  ctx.fillStyle="#FFFFFF"; ctx.font="700 13px sans-serif";
-  ctx.letterSpacing="2px"; ctx.textAlign="center";
-  ctx.fillText("⚡ LIVE PRICE",W-122,52); ctx.letterSpacing="0px";
-  ctx.font="900 52px sans-serif";
-  ctx.fillText(p.flash,W-122,110);
-  ctx.font="400 13px sans-serif";
-  ctx.fillStyle="rgba(255,255,255,0.65)";
-  ctx.fillText("was "+p.regular,W-122,138);
-  ctx.fillStyle=col+"cc"; ctx.font="600 12px sans-serif";
-  ctx.fillText("LINK IN BIO",W-122,162);
+  ctx.fillStyle = "#FFFFFF";
+  ctx.font = "900 38px sans-serif";
+  ctx.fillText(p.flash, 24, H - 12);
+
+  // Was price
+  ctx.fillStyle = "rgba(255,255,255,0.4)";
+  ctx.font = "400 13px sans-serif";
+  ctx.fillText("was " + p.regular, 150, H - 12);
+
+  // Right side - handle + link
+  ctx.fillStyle = "rgba(255,255,255,0.5)";
+  ctx.font = "500 12px sans-serif";
+  ctx.textAlign = "right";
+  ctx.fillText(sc.handle + "  ·  rootlabs.co", W - 20, H - 15);
 }
 
 function compositeRightBadge(canvas, bgImg, sc, skuKey) {
-  const W=400,H=400; canvas.width=W;canvas.height=H;
+  const W=400, H=400;
+  canvas.width=W; canvas.height=H;
   const ctx=canvas.getContext("2d");
-  const col=BANNER_COLORS[skuKey]||"#C88A2A";
-  const p=BANNER_PRICES[skuKey];
+  const col = BANNER_COLORS[skuKey] || BANNER_COLORS["mag-ashwa"];
+  const p = BANNER_PRICES[skuKey];
 
-  ctx.drawImage(bgImg,0,0,W,H);
+  // AI background
+  ctx.drawImage(bgImg, 0, 0, W, H);
 
-  // Radial overlay
-  const ov=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,W*0.7);
-  ov.addColorStop(0,"rgba(0,0,0,0.1)");
-  ov.addColorStop(1,"rgba(0,0,0,0.75)");
-  ctx.fillStyle=ov; ctx.fillRect(0,0,W,H);
+  // Dark green overlay bottom half
+  const ov = ctx.createLinearGradient(0, H * 0.3, 0, H);
+  ov.addColorStop(0, "rgba(26,61,43,0)");
+  ov.addColorStop(0.5, "rgba(26,61,43,0.9)");
+  ov.addColorStop(1, col.green);
+  ctx.fillStyle = ov; ctx.fillRect(0, 0, W, H);
 
-  // Border
-  ctx.strokeStyle=col; ctx.lineWidth=5;
-  ctx.strokeRect(3,3,W-6,H-6);
+  // Amber top bar
+  ctx.fillStyle = col.amber; ctx.fillRect(0, 0, W, 6);
+  // Green border
+  ctx.strokeStyle = col.green; ctx.lineWidth = 4;
+  ctx.strokeRect(2, 2, W - 4, H - 4);
 
-  // Top label
-  rr(ctx,0,0,W,50,0,col);
-  ctx.fillStyle="#000"; ctx.font="700 13px sans-serif";
-  ctx.letterSpacing="2px"; ctx.textAlign="center";
-  ctx.fillText("⚡ FLASH SALE LIVE NOW",W/2,31);
-  ctx.letterSpacing="0px";
+  // ROOT LABS top
+  ctx.fillStyle = col.green;
+  ctx.font = "800 12px sans-serif";
+  ctx.letterSpacing = "3px";
+  ctx.textAlign = "center";
+  ctx.fillText("ROOT LABS", W/2, 28);
+  ctx.letterSpacing = "0px";
 
-  // Big discount
-  const reg=parseFloat(p.regular.replace("$",""));
-  const fl=parseFloat(p.flash.replace("$",""));
-  const pct=Math.round((1-fl/reg)*100);
-  ctx.font="900 110px sans-serif";
-  ctx.fillStyle=col;
-  ctx.textAlign="center";
-  ctx.fillText(pct+"%",W/2,190);
-  ctx.font="700 28px sans-serif";
-  ctx.fillStyle="#FFFFFF";
-  ctx.fillText("OFF",W/2,230);
+  // Big discount %
+  const reg = parseFloat(p.regular.replace("$",""));
+  const fl = parseFloat(p.flash.replace("$",""));
+  const pct = Math.round((1 - fl/reg) * 100);
 
-  // Price
-  ctx.font="800 44px sans-serif";
-  ctx.fillStyle="#FFFFFF";
-  ctx.fillText(p.flash,W/2,295);
-  ctx.font="400 18px sans-serif";
-  ctx.fillStyle="rgba(255,255,255,0.5)";
-  ctx.fillText("was "+p.regular,W/2,325);
+  ctx.fillStyle = col.amber;
+  ctx.font = "900 88px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(pct + "%", W/2, 260);
 
-  // Bottom label
-  rr(ctx,0,H-55,W,55,0,col+"cc");
-  ctx.fillStyle="#FFFFFF"; ctx.font="700 14px sans-serif";
-  ctx.letterSpacing="1px"; ctx.textAlign="center";
-  ctx.fillText("MONEY-BACK GUARANTEE · LINK IN BIO",W/2,H-23);
-  ctx.letterSpacing="0px";
+  ctx.fillStyle = "#FFFFFF";
+  ctx.font = "700 22px sans-serif";
+  ctx.fillText("OFF TODAY", W/2, 292);
+
+  ctx.fillStyle = "#FFFFFF";
+  ctx.font = "900 40px sans-serif";
+  ctx.fillText(p.flash, W/2, 340);
+
+  ctx.fillStyle = "rgba(255,255,255,0.45)";
+  ctx.font = "400 14px sans-serif";
+  ctx.fillText("was " + p.regular, W/2, 366);
+
+  // Bottom CTA strip
+  ctx.fillStyle = col.amber;
+  ctx.fillRect(0, H - 44, W, 44);
+  ctx.fillStyle = "#000";
+  ctx.font = "700 13px sans-serif";
+  ctx.letterSpacing = "1px";
+  ctx.fillText("LINK IN BIO  ·  ROOTLABS.CO", W/2, H - 16);
+  ctx.letterSpacing = "0px";
 }
 
 function compositeFullOverlay(canvas, bgImg, sc, skuKey) {
-  const W=400,H=700; canvas.width=W;canvas.height=H;
+  const W=400, H=700;
+  canvas.width=W; canvas.height=H;
   const ctx=canvas.getContext("2d");
-  const col=BANNER_COLORS[skuKey]||"#C88A2A";
-  const p=BANNER_PRICES[skuKey];
+  const col = BANNER_COLORS[skuKey] || BANNER_COLORS["mag-ashwa"];
+  const p = BANNER_PRICES[skuKey];
 
-  ctx.drawImage(bgImg,0,0,W,H);
+  // AI background - centered crop
+  ctx.drawImage(bgImg, 0, 0, W, H);
 
-  // Top gradient overlay
-  const topOv=ctx.createLinearGradient(0,0,0,H*0.45);
-  topOv.addColorStop(0,"rgba(0,0,0,0.85)");
-  topOv.addColorStop(1,"rgba(0,0,0,0)");
-  ctx.fillStyle=topOv; ctx.fillRect(0,0,W,H*0.45);
+  // Cream overlay top
+  const topOv = ctx.createLinearGradient(0, 0, 0, H * 0.35);
+  topOv.addColorStop(0, col.cream + "F0");
+  topOv.addColorStop(1, "rgba(250,248,242,0)");
+  ctx.fillStyle = topOv; ctx.fillRect(0, 0, W, H * 0.35);
 
-  // Bottom gradient overlay
-  const botOv=ctx.createLinearGradient(0,H*0.55,0,H);
-  botOv.addColorStop(0,"rgba(0,0,0,0)");
-  botOv.addColorStop(1,"rgba(0,0,0,0.92)");
-  ctx.fillStyle=botOv; ctx.fillRect(0,H*0.55,W,H*0.45);
+  // Green overlay bottom
+  const botOv = ctx.createLinearGradient(0, H * 0.55, 0, H);
+  botOv.addColorStop(0, "rgba(26,61,43,0)");
+  botOv.addColorStop(1, col.green + "F8");
+  ctx.fillStyle = botOv; ctx.fillRect(0, H * 0.55, W, H * 0.45);
 
-  // Top - product name
-  ctx.font="700 13px sans-serif";
-  ctx.letterSpacing="2px";
-  ctx.fillStyle=col;
-  ctx.textAlign="center";
-  ctx.fillText("ROOT LABS",W/2,30);
-  ctx.letterSpacing="0px";
-  ctx.fillStyle="rgba(255,255,255,0.7)";
-  ctx.font="600 14px sans-serif";
-  ctx.fillText(sc.product.split(" ").slice(0,3).join(" "),W/2,52);
+  // Amber top bar
+  ctx.fillStyle = col.amber; ctx.fillRect(0, 0, W, 5);
 
-  // Top accent
-  ctx.fillStyle=col; ctx.fillRect(0,0,W,4);
+  // ROOT LABS top left
+  ctx.fillStyle = col.green;
+  ctx.font = "800 15px sans-serif";
+  ctx.letterSpacing = "3px";
+  ctx.textAlign = "left";
+  ctx.fillText("ROOT", 20, 38);
+  ctx.fillStyle = col.amber;
+  ctx.fillText("LABS", 20, 58);
+  ctx.letterSpacing = "0px";
+  ctx.fillStyle = col.green;
+  ctx.fillRect(20, 66, 48, 3);
 
-  // Bottom content
-  const hook=(sc.hook?.v1||"").split(/[.!?]/)[0].trim();
-  ctx.font="800 24px sans-serif";
-  ctx.fillStyle="#FFFFFF";
-  ctx.textAlign="center";
-  const lines=wl(ctx,hook,W-30);
-  lines.slice(0,3).forEach((l,i)=>ctx.fillText(l,W/2,480+i*32));
+  // Product category top right
+  ctx.fillStyle = col.green;
+  ctx.font = "600 11px sans-serif";
+  ctx.letterSpacing = "1px";
+  ctx.textAlign = "right";
+  ctx.fillText("NO SUGAR ADDED", W - 20, 38);
+  ctx.letterSpacing = "0px";
 
-  // CTA strip
-  rr(ctx,0,590,W,110,0,col);
-  ctx.fillStyle="#000"; ctx.font="700 14px sans-serif";
-  ctx.letterSpacing="1px"; ctx.textAlign="center";
-  ctx.fillText("⚡ LIVE FLASH SALE",W/2,618); ctx.letterSpacing="0px";
-  ctx.font="900 44px sans-serif";
-  ctx.fillStyle="#000";
-  ctx.fillText(p.flash,W/2,662);
-  ctx.font="400 13px sans-serif";
-  ctx.fillStyle="rgba(0,0,0,0.6)";
-  ctx.fillText("was "+p.regular+" · link in bio",W/2,683);
+  // Hook text at bottom on green
+  const hook = (sc.hook?.v1 || "").split(/[.!?]/)[0].trim();
+  ctx.fillStyle = col.amber;
+  ctx.font = "600 12px sans-serif";
+  ctx.letterSpacing = "2px";
+  ctx.textAlign = "left";
+  ctx.fillText("LIVE NOW", 20, H - 200);
+  ctx.letterSpacing = "0px";
 
-  // Handle
-  ctx.fillStyle="rgba(255,255,255,0.3)";
-  ctx.font="400 12px sans-serif";
-  ctx.fillText(sc.handle,W/2,H-8);
+  ctx.fillStyle = "#FFFFFF";
+  ctx.font = "800 24px sans-serif";
+  ctx.textAlign = "left";
+  const lines = wl(ctx, hook, W - 40);
+  lines.slice(0, 3).forEach((l, i) => {
+    ctx.fillStyle = i === 0 ? "#FFFFFF" : "rgba(255,255,255,0.82)";
+    ctx.fillText(l, 20, H - 170 + i * 32);
+  });
+
+  // Price block
+  ctx.fillStyle = "rgba(255,255,255,0.12)";
+  ctx.fillRect(20, H - 90, W - 40, 1);
+
+  ctx.fillStyle = col.amber;
+  ctx.font = "600 11px sans-serif";
+  ctx.letterSpacing = "2px";
+  ctx.textAlign = "left";
+  ctx.fillText("⚡ FLASH SALE PRICE", 20, H - 65);
+  ctx.letterSpacing = "0px";
+
+  ctx.fillStyle = "#FFFFFF";
+  ctx.font = "900 46px sans-serif";
+  ctx.fillText(p.flash, 20, H - 22);
+
+  ctx.fillStyle = "rgba(255,255,255,0.4)";
+  ctx.font = "400 13px sans-serif";
+  ctx.fillText("was " + p.regular + "  ·  " + sc.handle, 20, H - 6);
 }
-
-const COMPOSITE_FNS = {
-  "left-vertical": compositeLeftVertical,
-  "bottom-strip":  compositeBottomStrip,
-  "right-badge":   compositeRightBadge,
-  "full-overlay":  compositeFullOverlay
-};
 
 async function renderBannerSection(sc, skuKey) {
   const section = document.getElementById("vc-section");
