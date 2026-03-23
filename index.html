@@ -251,14 +251,18 @@ const SKUS=[
 const STEPS=["Scanning TikTok profile","Analyzing creator tone","Loading product brief","Writing your script","Cheatbook ready"];
 let curSku="mag-ashwa",curScript=null,curHandle="",hookTab=0,objTab=0,stepTimer=null,stepIdx=0;
 
-const grid=document.getElementById("sku-grid");
-SKUS.forEach(({k,label,tag})=>{
-  const b=document.createElement("button");
-  b.className="sb"+(k===curSku?" on":"");b.id="sk-"+k;
-  b.innerHTML=`<span class="sn">${label}</span><span class="st">${tag}</span>`;
-  b.onclick=()=>{curSku=k;document.querySelectorAll(".sb").forEach(x=>x.classList.remove("on"));b.classList.add("on");};
-  grid.appendChild(b);
-});
+function buildSkuGrid(){
+  const grid=document.getElementById("sku-grid");
+  if(!grid)return;
+  SKUS.forEach(({k,label,tag})=>{
+    const b=document.createElement("button");
+    b.className="sb"+(k===curSku?" on":"");b.id="sk-"+k;
+    b.innerHTML=`<span class="sn">${label}</span><span class="st">${tag}</span>`;
+    b.onclick=()=>{curSku=k;document.querySelectorAll(".sb").forEach(x=>x.classList.remove("on"));b.classList.add("on");};
+    grid.appendChild(b);
+  });
+}
+document.addEventListener("DOMContentLoaded", buildSkuGrid);
 
 function show(id){
   ["input-screen","ls","os"].forEach(s=>{
@@ -823,4 +827,23 @@ async function renderBannerSection(sc, skuKey) {
         hw.slice(0,3).forEach((l,i) => ctx.fillText(l, 40, fh*0.68+80+i*40));
         // Price
         const p = BANNER_PRICES[skuKey];
-        ctx.fillStyle = col.amber; ctx.font = "700 18px sans-
+        ctx.fillStyle = col.amber; ctx.font = "700 18px sans-serif";
+        ctx.fillText("⚡ FLASH SALE", 40, fh - 55);
+        ctx.fillStyle = "#FFFFFF"; ctx.font = "900 60px sans-serif";
+        ctx.fillText(p.flash, 40, fh - 10);
+      };
+      bgImg.src = proxiedUrl;
+    });
+
+  } catch (err) {
+    grid.innerHTML = `<div style="grid-column:1/-1;padding:1.5rem;background:var(--red-dim);border:1px solid rgba(200,74,42,0.25);border-radius:8px;color:#E08060;font-size:13px;">Banner generation failed: ${err.message}</div>`;
+  }
+}
+
+function renderVisualCards() {
+  renderBannerSection(curScript, curSku);
+}
+
+</script>
+</body>
+</html>
