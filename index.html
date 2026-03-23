@@ -384,7 +384,7 @@ function dlPDF(){
   sh("Closing lines");bt(sc.closing);
   doc.setFont("helvetica","normal");doc.setFontSize(6.5);doc.setTextColor(100,95,88);doc.text("Root Labs Script Engine  ·  Confidential",M,287);
   doc.save(`${curHandle.replace("@","")}_${sc.product.replace(/\s+/g,"_")}_Script.pdf`);
-
+}
 
 // ── VISUAL CARDS ─────────────────────────────────────────────────────────────
 
@@ -762,7 +762,6 @@ function renderVisualCards() {
 
   const section = document.getElementById("vc-section");
   section.style.display = "block";
-}
 }
 </script>
 </body>
