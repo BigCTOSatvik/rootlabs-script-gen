@@ -296,6 +296,14 @@ function renderOutput(){
     return d;
   }
 
+  // Voice summary banner
+  if (sc.creatorVoiceSummary) {
+    const vb = document.createElement("div");
+    vb.style.cssText = "background:rgba(200,138,42,0.07);border:1px solid rgba(200,138,42,0.22);border-radius:8px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:flex-start;gap:10px;";
+    vb.innerHTML = '<span style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--amber);font-family:var(--mono);flex-shrink:0;padding-top:1px;">Voice read</span><span style="font-size:12px;color:var(--cream2);font-weight:300;line-height:1.55;font-style:italic;">' + sc.creatorVoiceSummary + '</span>';
+    c.appendChild(vb);
+  }
+
   c.appendChild(card("01","Hook - pick one",`
     <div class="tabs" id="htabs"><button class="tab ah" onclick="sh(0)">Option 1</button><button class="tab" onclick="sh(1)">Option 2</button><button class="tab" onclick="sh(2)">Option 3</button></div>
     <p class="stx" id="htxt">${sc.hook.v1}</p>
