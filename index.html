@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Root Labs - Live Script Generator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --acc: #BA7517;
+    --acc-l: #FAEEDA;
+    --acc-d: #854F0B;
+    --acc2: #993C1D;
+    --acc2-l: #FAECE7;
+    --bg: #FAF9F7;
+    --surface: #FFFFFF;
+    --border: rgba(0,0,0,0.1);
+    --border-strong: rgba(0,0,0,0.18);
+    --text: #1A1A18;
+    --text-2: #5C5B57;
+    --text-3: #9C9B96;
+    --green: #3B6D11;
+    --green-l: #EAF3DE;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  /* NAV */
+  nav {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 1.5rem;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .nav-logo {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--acc);
+  }
+  .nav-sub {
+    font-size: 11px;
+    color: var(--text-3);
+    font-weight: 500;
+  }
+
+  /* LAYOUT */
+  .page { max-width: 680px; margin: 0 auto; padding: 2.5rem 1.25rem 5rem; }
+
+  /* INPUT SCREEN */
+  #input-screen {}
+  .hero { text-align: center; margin-bottom: 2.25rem; }
+  .hero-eye { font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--acc); margin-bottom: 0.65rem; }
+  .hero h1 { font-size: clamp(26px, 5vw, 38px); line-height: 1.15; font-weight: 700; color: var(--text); margin-bottom: 0.6rem; }
+  .hero h1 em { font-style: italic; color: var(--acc); font-weight: 700; }
+  .hero p { font-size: 14px; color: var(--text-2); max-width: 380px; margin: 0 auto; line-height: 1.65; }
+
+  .form-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.75rem;
+  }
+
+  .field { margin-bottom: 1.25rem; }
+  .field:last-child { margin-bottom: 0; }
+
+  label {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-2);
+    margin-bottom: 7px;
+  }
+  .opt-badge {
+    font-size: 8px;
+    background: var(--bg);
+    color: var(--text-3);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    margin-left: 5px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    vertical-align: middle;
+  }
+
+  .handle-wrap {
+    display: flex;
+    align-items: center;
+    border: 1.5px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background: var(--surface);
+    transition: border-color 0.15s;
+  }
+  .handle-wrap:focus-within { border-color: var(--acc); }
+  .at-sign {
+    color: var(--acc);
+    font-size: 16px;
+    font-weight: 700;
+    padding: 0 4px 0 13px;
+    user-select: none;
+    flex-shrink: 0;
+  }
+  input[type="text"] {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 15px;
+    padding: 11px 13px;
+    color: var(--text);
+    font-family: inherit;
+  }
+  input::placeholder { color: var(--text-3); }
+
+  .sku-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .sku-btn {
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 9px 11px;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    transition: all 0.12s;
+  }
+  .sku-btn:hover { border-color: var(--border-strong); }
+  .sku-btn.active {
+    border-color: var(--acc);
+    background: var(--acc-l);
+  }
+  .sku-name { font-size: 12px; font-weight: 600; color: var(--text); display: block; }
+  .sku-tag { font-size: 10px; color: var(--text-3); display: block; margin-top: 1px; }
+  .sku-btn.active .sku-tag { color: var(--acc); }
+
+  textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-size: 13px;
+    padding: 10px 13px;
+    outline: none;
+    resize: none;
+    line-height: 1.6;
+    font-family: inherit;
+    transition: border-color 0.15s;
+  }
+  textarea:focus { border-color: var(--border-strong); }
+  textarea::placeholder { color: var(--text-3); }
+
+  .divider { border: none; border-top: 1px solid var(--border); margin: 1.4rem 0; }
+
+  .gen-btn {
+    width: 100%;
+    background: var(--acc);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 13px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: 0.01em;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+  .gen-btn:hover { opacity: 0.88; }
+  .gen-btn:active { transform: scale(0.99); }
+  .gen-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .feature-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 12px;
+    justify-content: center;
+  }
+  .pill {
+    font-size: 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 3px 10px;
+    color: var(--text-3);
+    font-weight: 500;
+  }
+
+  /* LOADING SCREEN */
+  #loading-screen {
+    display: none;
+    min-height: 400px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 3rem 1rem;
+  }
+  .load-handle {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 3px;
+  }
+  .load-sku {
+    font-size: 12px;
+    color: var(--acc);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    margin-bottom: 2.5rem;
+  }
+  .steps { width: 100%; max-width: 280px; }
+  .step-row {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 7px 0;
+    opacity: 0.18;
+    transition: opacity 0.35s;
+  }
+  .step-row.active { opacity: 1; }
+  .step-row.done { opacity: 0.4; }
+  .step-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--border-strong);
+    flex-shrink: 0;
+    transition: background 0.3s;
+  }
+  .step-row.active .step-dot { background: var(--acc); }
+  @keyframes blink { 0%,100%{opacity:1;}50%{opacity:0.3;} }
+  .step-row.active .step-dot { animation: blink 1.1s infinite; }
+  .step-lbl { font-size: 13px; color: var(--text); text-align: left; }
+
+  /* OUTPUT SCREEN */
+  #output-screen { display: none; }
+
+  .out-hdr {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .out-meta {}
+  .out-eyebrow { font-size: 9px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-3); margin-bottom: 4px; }
+  .out-title { font-size: 20px; font-weight: 700; color: var(--text); }
+  .out-title span { color: var(--acc); }
+  .out-btns { display: flex; gap: 7px; flex-shrink: 0; }
+  .btn-sec {
+    background: var(--surface);
+    border: 1.5px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 8px 15px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.12s;
+  }
+  .btn-sec:hover { background: var(--bg); }
+  .btn-pri {
+    background: var(--acc);
+    border: none;
+    border-radius: var(--radius-sm);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 8px 15px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: opacity 0.15s;
+  }
+  .btn-pri:hover { opacity: 0.87; }
+
+  /* SCRIPT SECTIONS */
+  .section-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+  .section-hdr {
+    padding: 10px 15px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+  .section-num {
+    width: 22px;
+    height: 22px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 800;
+    flex-shrink: 0;
+    background: var(--acc-l);
+    color: var(--acc-d);
+  }
+  .section-num.obj { background: var(--acc2-l); color: var(--acc2); }
+  .section-num.cta { background: var(--green-l); color: var(--green); }
+  .section-title {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    color: var(--text-2);
+  }
+  .section-body { padding: 14px 15px; }
+  .section-text {
+    font-size: 13.5px;
+    line-height: 1.78;
+    color: var(--text);
+    white-space: pre-wrap;
+  }
+  .section-text.bold { font-weight: 600; font-size: 14px; }
+
+  .tabs { display: flex; gap: 5px; margin-bottom: 11px; flex-wrap: wrap; }
+  .tab-btn {
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 11px;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-2);
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.1s;
+  }
+  .tab-btn.active-hook { border-color: var(--acc); color: var(--acc); background: var(--acc-l); }
+  .tab-btn.active-obj { border-color: var(--acc2); color: var(--acc2); background: var(--acc2-l); }
+
+  .obj-q {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--acc2);
+    margin-bottom: 8px;
+    line-height: 1.5;
+  }
+
+  .eng-list {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .eng-item {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 9px 12px;
+    font-size: 13px;
+    color: var(--text);
+    font-weight: 500;
+    line-height: 1.5;
+  }
+
+  .error-msg {
+    background: #FEF2F2;
+    border: 1px solid #FCA5A5;
+    border-radius: var(--radius-sm);
+    padding: 12px 15px;
+    color: #991B1B;
+    font-size: 13px;
+    margin-top: 12px;
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">Root Labs</div>
+  <div class="nav-sub">Live Script Generator</div>
+</nav>
+
+<div class="page">
+
+  <!-- INPUT SCREEN -->
+  <div id="input-screen">
+    <div class="hero">
+      <div class="hero-eye">Script Engine - V1</div>
+      <h1>Live script,<br><em>built for their voice.</em></h1>
+      <p>Enter a creator handle and product. Get a personalized 7-section cheatbook in seconds.</p>
+    </div>
+
+    <div class="form-card">
+      <div class="field">
+        <label>TikTok Handle</label>
+        <div class="handle-wrap">
+          <span class="at-sign">@</span>
+          <input type="text" id="handle" placeholder="e.g. riva, kays_faves, drewreview" autocomplete="off" autocorrect="off" autocapitalize="off"/>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Product</label>
+        <div class="sku-grid" id="sku-grid"></div>
+      </div>
+
+      <div class="field">
+        <label>About This Creator <span class="opt-badge">Optional</span></label>
+        <textarea id="desc" rows="2" placeholder="e.g. ER nurse, talks about burnout and recovery. Dry humor. Audience is 30-45 women."></textarea>
+      </div>
+
+      <hr class="divider"/>
+
+      <button class="gen-btn" id="gen-btn" onclick="generate()">Generate Live Script</button>
+      <div class="error-msg" id="error-msg"></div>
+
+      <div class="feature-pills">
+        <span class="pill">3 hook variants</span>
+        <span class="pill">Visual cue</span>
+        <span class="pill">Objection handling</span>
+        <span class="pill">Engagement prompts</span>
+        <span class="pill">Flash sale CTA</span>
+        <span class="pill">PDF download</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOADING SCREEN -->
+  <div id="loading-screen">
+    <div class="load-handle" id="load-handle">@creator</div>
+    <div class="load-sku" id="load-sku">Product</div>
+    <div class="steps" id="steps-container"></div>
+  </div>
+
+  <!-- OUTPUT SCREEN -->
+  <div id="output-screen">
+    <div class="out-hdr">
+      <div class="out-meta">
+        <div class="out-eyebrow">Live Script Cheatbook</div>
+        <div class="out-title" id="out-title">@handle <span>· Product</span></div>
+      </div>
+      <div class="out-btns">
+        <button class="btn-sec" onclick="reset()">New Script</button>
+        <button class="btn-pri" onclick="downloadPDF()">Download PDF</button>
+      </div>
+    </div>
+    <div id="sections-container"></div>
+  </div>
+
+</div>
+
+<script>
+const SKUS = [
+  { k: "mag-ashwa",      label: "Mag+Ashwa",            tag: "Sleep + stress" },
+  { k: "alpha-shilajit", label: "Alpha Shilajit",        tag: "Energy + vitality" },
+  { k: "hair-density",   label: "Hair Density Roll-On",  tag: "Hair growth" },
+  { k: "sea-moss",       label: "Sea Moss",              tag: "92 minerals" },
+  { k: "turmeric",       label: "Turmeric",              tag: "Anti-inflammatory" }
+];
+
+const STEPS = [
+  "Scanning TikTok profile",
+  "Analyzing creator tone",
+  "Loading product brief",
+  "Writing your script",
+  "Cheatbook ready"
+];
+
+let curSku = "mag-ashwa";
+let curScript = null;
+let curHandle = "";
+let hookTab = 0;
+let objTab = 0;
+let stepTimer = null;
+let stepIdx = 0;
+
+// Build SKU grid
+const grid = document.getElementById("sku-grid");
+SKUS.forEach(({ k, label, tag }) => {
+  const b = document.createElement("button");
+  b.className = "sku-btn" + (k === curSku ? " active" : "");
+  b.id = "sku-" + k;
+  b.innerHTML = `<span class="sku-name">${label}</span><span class="sku-tag">${tag}</span>`;
+  b.onclick = () => {
+    curSku = k;
+    document.querySelectorAll(".sku-btn").forEach(x => x.classList.remove("active"));
+    b.classList.add("active");
+  };
+  grid.appendChild(b);
+});
+
+function show(id) {
+  ["input-screen","loading-screen","output-screen"].forEach(s => {
+    const el = document.getElementById(s);
+    el.style.display = s === id ? (id === "loading-screen" ? "flex" : "block") : "none";
+  });
+}
+
+function startSteps(handle, skuLabel) {
+  document.getElementById("load-handle").textContent = "@" + handle;
+  document.getElementById("load-sku").textContent = skuLabel;
+  const c = document.getElementById("steps-container");
+  c.innerHTML = "";
+  STEPS.forEach((s, i) => {
+    const row = document.createElement("div");
+    row.className = "step-row";
+    row.id = "step-" + i;
+    row.innerHTML = `<div class="step-dot"></div><span class="step-lbl">${s}</span>`;
+    c.appendChild(row);
+  });
+  stepIdx = 0;
+  activateStep(0);
+  stepTimer = setInterval(() => {
+    if (stepIdx < STEPS.length - 2) { stepIdx++; activateStep(stepIdx); }
+  }, 1100);
+}
+
+function activateStep(i) {
+  document.querySelectorAll(".step-row").forEach((r, j) => {
+    r.classList.remove("active", "done");
+    if (j < i) r.classList.add("done");
+    else if (j === i) r.classList.add("active");
+  });
+}
+
+function finishSteps() {
+  clearInterval(stepTimer);
+  activateStep(STEPS.length - 1);
+}
+
+async function generate() {
+  const handle = document.getElementById("handle").value.replace("@", "").trim();
+  const desc = document.getElementById("desc").value.trim();
+  const errBox = document.getElementById("error-msg");
+  errBox.style.display = "none";
+
+  if (!handle) {
+    document.getElementById("handle").focus();
+    return;
+  }
+
+  curHandle = handle;
+  const skuLabel = SKUS.find(s => s.k === curSku)?.label || curSku;
+
+  document.getElementById("gen-btn").disabled = true;
+  show("loading-screen");
+  startSteps(handle, skuLabel);
+
+  try {
+    const res = await fetch("/api/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ handle, sku: curSku, desc: desc || "not provided" })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) throw new Error(data.error || "Generation failed");
+
+    finishSteps();
+    await new Promise(r => setTimeout(r, 700));
+
+    curScript = { ...data.script, handle: "@" + handle, product: skuLabel };
+    hookTab = 0; objTab = 0;
+    renderOutput();
+    show("output-screen");
+  } catch (e) {
+    clearInterval(stepTimer);
+    show("input-screen");
+    errBox.textContent = "Something went wrong - " + e.message;
+    errBox.style.display = "block";
+    document.getElementById("gen-btn").disabled = false;
+  }
+}
+
+function renderOutput() {
+  const sc = curScript;
+  document.getElementById("out-title").innerHTML = `${sc.handle} <span>· ${sc.product}</span>`;
+  const c = document.getElementById("sections-container");
+  c.innerHTML = "";
+
+  // 1 - Hook
+  const hookCard = makeCard("1", "Hook - pick one", "", "");
+  const hookBody = hookCard.querySelector(".section-body");
+  const hookTabs = document.createElement("div");
+  hookTabs.className = "tabs";
+  hookTabs.id = "hook-tabs";
+  ["Option 1","Option 2","Option 3"].forEach((label, i) => {
+    const btn = document.createElement("button");
+    btn.className = "tab-btn" + (i === 0 ? " active-hook" : "");
+    btn.textContent = label;
+    btn.onclick = () => switchHook(i);
+    hookTabs.appendChild(btn);
+  });
+  const hookText = document.createElement("p");
+  hookText.className = "section-text";
+  hookText.id = "hook-text";
+  hookText.textContent = sc.hook.v1;
+  hookBody.appendChild(hookTabs);
+  hookBody.appendChild(hookText);
+  c.appendChild(hookCard);
+
+  // 2 - Visual hook
+  c.appendChild(makeCard("2", "Visual hook cue", sc.visualHook, ""));
+
+  // 3 - Positioning
+  c.appendChild(makeCard("3", "Product positioning", sc.positioning, ""));
+
+  // 4 - Social proof
+  c.appendChild(makeCard("4", "Social proof + mechanism", sc.socialProof, ""));
+
+  // 5 - Engagement prompts
+  const engCard = makeCard("5", "Engagement prompts", "", "");
+  const engBody = engCard.querySelector(".section-body");
+  const engList = document.createElement("div");
+  engList.className = "eng-list";
+  (sc.engagementPrompts || []).forEach(p => {
+    const item = document.createElement("div");
+    item.className = "eng-item";
+    item.textContent = p;
+    engList.appendChild(item);
+  });
+  engBody.appendChild(engList);
+  c.appendChild(engCard);
+
+  // 6 - Objections
+  const objCard = makeCard("6", "Objection handling", "", "obj");
+  const objBody = objCard.querySelector(".section-body");
+  const objTabs = document.createElement("div");
+  objTabs.className = "tabs";
+  objTabs.id = "obj-tabs";
+  sc.objections.forEach((_, i) => {
+    const btn = document.createElement("button");
+    btn.className = "tab-btn" + (i === 0 ? " active-obj" : "");
+    btn.textContent = "Q" + (i + 1);
+    btn.onclick = () => switchObj(i);
+    objTabs.appendChild(btn);
+  });
+  const objQ = document.createElement("div");
+  objQ.className = "obj-q";
+  objQ.id = "obj-q";
+  objQ.textContent = '"' + sc.objections[0].q + '"';
+  const objA = document.createElement("p");
+  objA.className = "section-text";
+  objA.id = "obj-a";
+  objA.textContent = sc.objections[0].a;
+  objBody.appendChild(objTabs);
+  objBody.appendChild(objQ);
+  objBody.appendChild(objA);
+  c.appendChild(objCard);
+
+  // 7 - CTA
+  const ctaCard = makeCard("7", "Flash sale CTA", sc.cta, "cta");
+  ctaCard.querySelector(".section-text").classList.add("bold");
+  c.appendChild(ctaCard);
+
+  // 8 - Closing
+  c.appendChild(makeCard("8", "Closing lines", sc.closing, ""));
+}
+
+function makeCard(num, title, body, type) {
+  const card = document.createElement("div");
+  card.className = "section-card";
+  card.innerHTML = `
+    <div class="section-hdr">
+      <div class="section-num ${type}">${num}</div>
+      <div class="section-title">${title}</div>
+    </div>
+    <div class="section-body">
+      ${body ? `<p class="section-text">${body}</p>` : ""}
+    </div>`;
+  return card;
+}
+
+function switchHook(i) {
+  hookTab = i;
+  const keys = ["v1","v2","v3"];
+  document.getElementById("hook-text").textContent = curScript.hook[keys[i]];
+  document.querySelectorAll("#hook-tabs .tab-btn").forEach((b, j) => {
+    b.className = "tab-btn" + (j === i ? " active-hook" : "");
+  });
+}
+
+function switchObj(i) {
+  objTab = i;
+  document.getElementById("obj-q").textContent = '"' + curScript.objections[i].q + '"';
+  document.getElementById("obj-a").textContent = curScript.objections[i].a;
+  document.querySelectorAll("#obj-tabs .tab-btn").forEach((b, j) => {
+    b.className = "tab-btn" + (j === i ? " active-obj" : "");
+  });
+}
+
+function reset() {
+  document.getElementById("gen-btn").disabled = false;
+  document.getElementById("error-msg").style.display = "none";
+  show("input-screen");
+}
+
+function downloadPDF() {
+  if (!window.jspdf || !curScript) return;
+  const { jsPDF } = window.jspdf;
+  const sc = curScript;
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const W = doc.internal.pageSize.getWidth(), M = 18;
+  let y = 0;
+
+  const np = () => { doc.addPage(); y = 22; };
+  const cy = (n = 25) => { if (y + n > 272) np(); };
+
+  // Header
+  doc.setFillColor(18, 18, 18);
+  doc.rect(0, 0, W, 36, "F");
+  doc.setTextColor(186, 117, 23);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(16);
+  doc.text("ROOT LABS", M, 14);
+  doc.setTextColor(230, 225, 215);
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.text("Live Script Cheatbook", M, 23);
+  doc.setTextColor(120, 115, 108);
+  doc.setFontSize(8);
+  doc.text(`${sc.handle}  ·  ${sc.product}`, M, 31);
+  y = 48;
+
+  const sh = (title, rgb) => {
+    cy(14);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7.5);
+    doc.setTextColor(...(rgb || [186, 117, 23]));
+    doc.text(title.toUpperCase(), M, y);
+    doc.setDrawColor(...(rgb || [186, 117, 23]));
+    doc.setLineWidth(0.35);
+    doc.line(M, y + 2, W - M, y + 2);
+    y += 9;
+  };
+
+  const bt = (text) => {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9.5);
+    doc.setTextColor(28, 28, 26);
+    const lines = doc.splitTextToSize(text, W - M * 2);
+    cy(lines.length * 5 + 5);
+    doc.text(lines, M, y);
+    y += lines.length * 5 + 5;
+  };
+
+  sh("Hook options - pick one");
+  [sc.hook.v1, sc.hook.v2, sc.hook.v3].forEach((h, i) => {
+    if (!h) return;
+    cy(8);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(110, 105, 98);
+    doc.text("Option " + (i + 1), M, y);
+    y += 5;
+    bt(h);
+  });
+
+  sh("Visual hook cue");
+  bt(sc.visualHook);
+
+  sh("Product positioning");
+  bt(sc.positioning);
+
+  sh("Social proof + mechanism");
+  bt(sc.socialProof);
+
+  sh("Engagement prompts", [14, 105, 78]);
+  (sc.engagementPrompts || []).forEach(p => bt("- " + p));
+
+  sh("Objection handling", [153, 60, 29]);
+  sc.objections.forEach(o => {
+    cy(26);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(100, 50, 15);
+    const ql = doc.splitTextToSize("Q: " + o.q, W - M * 2);
+    doc.text(ql, M, y);
+    y += ql.length * 5 + 2;
+    bt("A: " + o.a);
+  });
+
+  sh("Flash sale CTA", [30, 120, 70]);
+  bt(sc.cta);
+
+  sh("Closing lines");
+  bt(sc.closing);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7);
+  doc.setTextColor(160, 155, 148);
+  doc.text("Root Labs Script Engine  ·  " + new Date().toLocaleDateString(), M, 287);
+
+  doc.save(`${curHandle.replace("@","")}_${sc.product.replace(/\s+/g, "_")}_Script.pdf`);
+}
+</script>
+</body>
+</html>
