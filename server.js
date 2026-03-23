@@ -730,40 +730,37 @@ async function scrapeProfile(handle) {
     let transcripts = [];
 
     if (videoUrls.length > 0) {
-      console.log(`[Scrape] Step 2: fetching video detail + subtitles for ${videoUrls.length} videos`);
+      console.log(`[Scrape] Step 2: fetching AI transcripts for ${videoUrls.length} videos via sian.agency`);
       try {
-        const detailItems = await runApify(
-          "clockworks~tiktok-scraper",
+        const transcriptItems = await runApify(
+          "sian.agency~best-tiktok-ai-transcript-extractor",
           {
-            postURLs: videoUrls.slice(0, 8),
-            shouldDownloadVideos: false,
-            shouldDownloadCovers: false,
-            shouldDownloadSubtitles: true,
-            shouldDownloadSlideshowImages: false
+            urls: videoUrls.slice(0, 5)
           },
-          APIFY_KEY, 60000
+          APIFY_KEY, 90000
         );
-        console.log(`[Scrape] Detail scraper returned ${detailItems.length} items`);
-        if (detailItems.length > 0) {
-          console.log("[Scrape] Detail item keys:", Object.keys(detailItems[0]).join(", "));
+        console.log(`[Scrape] Transcript actor returned ${transcriptItems.length} items`);
+        if (transcriptItems.length > 0) {
+          console.log("[Scrape] Transcript item keys:", Object.keys(transcriptItems[0]).join(", "));
         }
-        transcripts = detailItems
+        transcripts = transcriptItems
           .map(item => {
-            // Try all known subtitle/transcript fields
-            const subtitles = item.subtitleLinks || item.subtitles || [];
-            const text = item.text || item.desc || "";
-            const videoSubtitle = Array.isArray(subtitles) && subtitles.length > 0
-              ? subtitles.map(s => s.text || s.content || "").filter(Boolean).join(" ")
-              : "";
-            const finalText = videoSubtitle || text;
-            return finalText.length > 20
-              ? { videoUrl: item.webVideoUrl || item.videoUrl || "", transcript: finalText, likes: item.diggCount || 0 }
-              : null;
+            // Try all known transcript field names from this actor
+            const text = item.transcript || item.transcription || item.aiTranscript
+              || item.text || item.caption || item.subtitles || "";
+            const finalText = typeof text === "string" ? text : JSON.stringify(text);
+            if (finalText.length < 20) return null;
+            console.log(`[Scrape] Got transcript (${finalText.length} chars): ${finalText.slice(0, 100)}...`);
+            return {
+              videoUrl: item.url || item.videoUrl || item.webVideoUrl || "",
+              transcript: finalText,
+              likes: item.likes || item.diggCount || 0
+            };
           })
           .filter(Boolean);
-        console.log(`[Scrape] Got ${transcripts.length} usable transcripts/captions from detail scraper`);
+        console.log(`[Scrape] Got ${transcripts.length} usable transcripts`);
       } catch (err) {
-        console.warn("[Scrape] Detail scraper failed (non-fatal):", err.message);
+        console.warn("[Scrape] Transcript actor failed (non-fatal):", err.message);
       }
     }
 
