@@ -8,7 +8,7 @@ const OpenAI = require("openai");
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use(express.static(__dirname));
+app.use(express.static(path.join(__dirname, "public")));
 
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -116,16 +116,94 @@ KEY CONVERTING PHRASES: "Tired but wired" / "10 forms, 4 pathways" / "No saturat
 // ─── SCRAPE ─────────────────────────────────────────────────────────────────
 async function scrapeProfile(handle) {
   const clean = handle.replace("@", "").trim();
+  const APIFY_KEY = process.env.APIFY_API_KEY;
+
+  if (!APIFY_KEY) {
+    console.log("No Apify key - using fallback");
+    return { handle: clean, displayName: clean, bio: "", posts: [], source: "fallback" };
+  }
+
   try {
-    const url = `https://www.tiktok.com/oembed?url=https://www.tiktok.com/@${clean}`;
-    const res = await axios.get(url, { timeout: 6000 });
+    console.log(`Scraping @${clean} via Apify...`);
+
+    // Start the Apify actor run
+    const runRes = await axios.post(
+      `https://api.apify.com/v2/acts/clockworks~tiktok-profile-scraper/runs`,
+      {
+        profiles: [clean],
+        resultsPerPage: 20,
+        profileScrapeSections: ["videos"]
+      },
+      {
+        headers: { "Content-Type": "application/json" },
+        params: { token: APIFY_KEY, timeout: 60 },
+        timeout: 10000
+      }
+    );
+
+    const runId = runRes.data.data.id;
+    console.log(`Apify run started: ${runId}`);
+
+    // Poll for completion (max 50 seconds)
+    let status = "RUNNING";
+    let attempts = 0;
+    while (status === "RUNNING" && attempts < 10) {
+      await new Promise(r => setTimeout(r, 5000));
+      const statusRes = await axios.get(
+        `https://api.apify.com/v2/actor-runs/${runId}`,
+        { params: { token: APIFY_KEY }, timeout: 8000 }
+      );
+      status = statusRes.data.data.status;
+      attempts++;
+      console.log(`Apify status: ${status} (attempt ${attempts})`);
+    }
+
+    if (status !== "SUCCEEDED") {
+      throw new Error(`Apify run did not succeed: ${status}`);
+    }
+
+    // Fetch results
+    const datasetId = runRes.data.data.defaultDatasetId;
+    const resultsRes = await axios.get(
+      `https://api.apify.com/v2/datasets/${datasetId}/items`,
+      { params: { token: APIFY_KEY, limit: 25 }, timeout: 8000 }
+    );
+
+    const items = resultsRes.data || [];
+    console.log(`Apify returned ${items.length} items`);
+
+    if (!items.length) throw new Error("No data returned");
+
+    // Extract profile info from first item
+    const first = items[0];
+    const displayName = first.authorMeta?.name || first.author?.nickname || clean;
+    const bio = first.authorMeta?.signature || first.author?.signature || "";
+    const followers = first.authorMeta?.fans || first.author?.followerCount || 0;
+
+    // Extract post captions for tone analysis
+    const posts = items
+      .filter(item => item.text || item.desc)
+      .slice(0, 20)
+      .map(item => ({
+        caption: item.text || item.desc || "",
+        likes: item.diggCount || item.stats?.diggCount || 0,
+        comments: item.commentCount || item.stats?.commentCount || 0,
+        shares: item.shareCount || item.stats?.shareCount || 0
+      }));
+
     return {
       handle: clean,
-      displayName: res.data.author_name || clean,
-      bio: res.data.title || ""
+      displayName,
+      bio,
+      followers,
+      posts,
+      source: "apify"
     };
-  } catch {
-    return { handle: clean, displayName: clean, bio: "" };
+
+  } catch (err) {
+    console.error("Apify scrape failed:", err.message);
+    // Graceful fallback - still generate, just without real data
+    return { handle: clean, displayName: clean, bio: "", posts: [], source: "fallback" };
   }
 }
 
@@ -134,11 +212,20 @@ async function generateScript({ handle, sku, desc, profile }) {
   const product = SKUS[sku];
   if (!product) throw new Error("Unknown SKU: " + sku);
 
+  // Apify-powered creator context
+  const postSample = (profile?.posts || [])
+    .sort((a, b) => (b.likes + b.comments) - (a.likes + a.comments))
+    .slice(0, 12)
+    .map((p, i) => `Post ${i+1}: "${p.caption}" (${p.likes} likes, ${p.comments} comments)`)
+    .join("\n");
+
   const creatorContext = [
     `TikTok handle: @${handle}`,
     profile?.displayName && profile.displayName !== handle ? `Display name: ${profile.displayName}` : null,
-    profile?.bio ? `Bio: ${profile.bio}` : null,
-    desc && desc !== "not provided" ? `Creator says about themselves: ${desc}` : null
+    profile?.bio ? `Bio: "${profile.bio}"` : null,
+    profile?.followers ? `Followers: ${Number(profile.followers).toLocaleString()}` : null,
+    profile?.source === "apify" && postSample ? `\nRECENT POSTS (use to infer tone, vocabulary, humor, audience):\n${postSample}` : null,
+    desc && desc !== "not provided" ? `\nCreator says about themselves: ${desc}` : null
   ].filter(Boolean).join("\n");
 
   const systemPrompt = `You write TikTok Live scripts for Root Labs, a wellness supplement brand. Create conversion-focused, personalized live script cheatbooks for specific creators.
