@@ -972,6 +972,20 @@ app.post("/api/generate", async (req, res) => {
   }
 });
 
+// ─── IMAGE PROXY (avoids DALL-E CORS issues on canvas) ──────────────────────
+app.get("/api/proxy-image", async (req, res) => {
+  const { url } = req.query;
+  if (!url) return res.status(400).send("url required");
+  try {
+    const response = await axios.get(url, { responseType: "arraybuffer", timeout: 15000 });
+    res.set("Content-Type", response.headers["content-type"] || "image/png");
+    res.set("Cache-Control", "public, max-age=3600");
+    res.send(Buffer.from(response.data));
+  } catch (err) {
+    res.status(500).send("proxy failed: " + err.message);
+  }
+});
+
 // ─── BANNER GENERATION ──────────────────────────────────────────────────────
 const BANNER_PROMPTS = {
   "left-vertical": (product, claim) =>
