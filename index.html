@@ -790,34 +790,37 @@ async function renderBannerSection(sc, skuKey) {
       wrap.appendChild(footer);
       grid.appendChild(wrap);
 
-      // Load DALL-E image and composite
+      // Load DALL-E image via server proxy to avoid CORS/expiry issues
       const bgImg = new Image();
-      bgImg.crossOrigin = "anonymous";
+      const proxiedUrl = "/api/proxy-image?url=" + encodeURIComponent(data.banners[type]);
+
       bgImg.onload = () => {
         COMPOSITE_FNS[type](canvas, bgImg, sc, skuKey);
       };
       bgImg.onerror = () => {
-        // Fallback - render text-only if image fails to load
-        canvas.width = w * 2; canvas.height = h * 2;
+        // Fallback - draw branded card without background image
+        const fw = w * 2; const fh = h * 2;
+        canvas.width = fw; canvas.height = fh;
         const ctx = canvas.getContext("2d");
-        const col = BANNER_COLORS[skuKey] || "#C88A2A";
-        ctx.fillStyle = "#0D0C09"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = col; ctx.font = "700 32px sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText("Banner ready - image loading...", canvas.width/2, canvas.height/2);
-      };
-      bgImg.src = data.banners[type];
-    });
-
-  } catch (err) {
-    grid.innerHTML = `<div style="grid-column:1/-1;padding:1.5rem;background:var(--red-dim);border:1px solid rgba(200,74,42,0.25);border-radius:8px;color:#E08060;font-size:13px;">Banner generation failed: ${err.message}</div>`;
-  }
-}
-
-function renderVisualCards() {
-  renderBannerSection(curScript, curSku);
-}
-
-</script>
-</body>
-</html>
+        const col = BANNER_COLORS[skuKey] || BANNER_COLORS["mag-ashwa"];
+        // Cream background
+        ctx.fillStyle = "#F2EDE4"; ctx.fillRect(0, 0, fw, fh);
+        // Green panel bottom third
+        ctx.fillStyle = col.green; ctx.fillRect(0, fh * 0.65, fw, fh * 0.35);
+        // Green accent top
+        ctx.fillStyle = col.green; ctx.fillRect(0, 0, fw, 8);
+        // ROOT LABS
+        ctx.fillStyle = col.green; ctx.font = "700 28px sans-serif";
+        ctx.textAlign = "left"; ctx.fillText("ROOT LABS", 40, 55);
+        ctx.fillStyle = col.amber; ctx.fillRect(40, 65, 80, 4);
+        // Product name
+        ctx.fillStyle = col.amber; ctx.font = "600 22px sans-serif";
+        ctx.fillText(sc.product.toUpperCase().slice(0,25), 40, fh * 0.68 + 36);
+        // Hook
+        ctx.fillStyle = "#FFFFFF"; ctx.font = "700 32px sans-serif";
+        const hook = (sc.hook?.v1||"").split(/[.!?]/)[0].trim();
+        const hw = wl(ctx, hook, fw - 80);
+        hw.slice(0,3).forEach((l,i) => ctx.fillText(l, 40, fh*0.68+80+i*40));
+        // Price
+        const p = BANNER_PRICES[skuKey];
+        ctx.fillStyle = col.amber; ctx.font = "700 18px sans-
