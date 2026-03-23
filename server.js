@@ -799,7 +799,7 @@ async function generateScript({ handle, sku, desc, profile }) {
   const creatorContext = [
     `TikTok handle: @${handle}`,
     profile?.displayName && profile.displayName !== handle ? `Display name: ${profile.displayName}` : null,
-    profile?.bio ? `Bio: "${profile.bio}"` : null,
+    profile?.bio ? `Bio: "${safeBio}"` : null,
     profile?.followers ? `Followers: ${Number(profile.followers).toLocaleString()}` : null,
     postSample ? `\nRECENT CAPTIONS (analyze these for tone, vocabulary, humor, and how they communicate):\n${postSample}` : null,
     transcriptSample ? `\nVIDEO TRANSCRIPTS (this is their exact spoken voice - replicate it precisely):\n${transcriptSample}` : null,
@@ -808,11 +808,19 @@ async function generateScript({ handle, sku, desc, profile }) {
   ].filter(Boolean).join("\n");
 
   // ── Derive creator voice profile from transcripts + captions ──
-  const voiceProfile = transcriptSample
-    ? "TRANSCRIPTS TO ANALYZE (read carefully - this is how they actually speak):\n" + transcriptSample
-      + (postSample ? "\n\nCAPTIONS (additional tone signals):\n" + postSample : "")
-    : postSample
-      ? "CAPTIONS (use for tone inference):\n" + postSample
+  // Escape backticks to prevent template literal breakage
+  const safeScience = product.science.replace(/`/g, "'");
+  const safeBenchmark = BENCHMARK.replace(/`/g, "'");
+  const safePostSample = postSample.replace(/`/g, "'");
+  const safeTranscriptSample = transcriptSample.replace(/`/g, "'");
+  const safeBio = (profile?.bio || "").replace(/`/g, "'");
+  const safeDesc = (desc || "").replace(/`/g, "'");
+
+  const voiceProfile = safeTranscriptSample
+    ? "TRANSCRIPTS TO ANALYZE (read carefully - this is how they actually speak):\n" + safeTranscriptSample
+      + (safePostSample ? "\n\nCAPTIONS (additional tone signals):\n" + safePostSample : "")
+    : safePostSample
+      ? "CAPTIONS (use for tone inference):\n" + safePostSample
       : "No content data - infer a warm peer-to-peer conversational tone from the handle.";
 
   const systemPrompt = `You are writing a TikTok Live script for a specific creator promoting ${product.label} by Root Labs.
@@ -848,14 +856,14 @@ Results timeline: ${product.timeline}
 Pricing: ${product.pricing}
 
 SCIENCE (your job is to teach this through the creator voice - adapt complexity to their level):
-${product.science}
+${safeScience}
 
 Key phrases to weave in: ${product.keyPhrases.join(", ")}
 Demo idea: ${product.demoScript || "hold product up close, show label"}
 Engagement prompts bank (adapt to creator tone): ${product.engagementPrompts.join(" | ")}
 
 ══ STEP 3: LIVE SCRIPT FRAMEWORK ══════════════════════════════════════════
-${BENCHMARK}
+${safeBenchmark}
 
 ══ GUARDRAILS ══════════════════════════════════════════════════════════════
 - No shame-based or body-shaming hooks
@@ -899,7 +907,33 @@ Return ONLY valid JSON, zero extra text, no markdown fences.
 
   const text = response.choices[0].message.content.trim();
   const clean = text.replace(/```json|```/g, "").trim();
-  return JSON.parse(clean);
+  try {
+    return JSON.parse(clean);
+  } catch (parseErr) {
+    console.error("[Generate] JSON parse failed, attempting repair...");
+    console.error("[Generate] Raw response (first 500):", clean.slice(0, 500));
+    // Try to extract JSON object if there's surrounding text
+    const match = clean.match(/\{[\s\S]*\}/);
+    if (match) {
+      try {
+        return JSON.parse(match[0]);
+      } catch (e2) {
+        // Last resort - retry with stricter prompt
+        console.error("[Generate] Repair failed, retrying with strict JSON prompt");
+        const retryResponse = await client.chat.completions.create({
+          model: "gpt-4o",
+          messages: [
+            { role: "user", content: `You are a JSON generator. Return ONLY a valid JSON object with these exact keys: hook (object with v1, v2, v3 strings), visualHook (string), positioning (string), socialProof (string), engagementPrompts (array of 3 strings), objections (array of 3 objects each with q and a strings), cta (string), closing (string), creatorVoiceSummary (string). The script is for @${handle} promoting ${product.label} by Root Labs. Make it personalized and educational. No markdown, no extra text, just the JSON object.` }
+          ],
+          temperature: 0.7,
+          max_tokens: 2500
+        });
+        const retryText = retryResponse.choices[0].message.content.trim().replace(/```json|```/g, "").trim();
+        return JSON.parse(retryText);
+      }
+    }
+    throw new Error("Could not parse GPT response as JSON: " + parseErr.message);
+  }
 }
 
 // ─── ROUTES ─────────────────────────────────────────────────────────────────
