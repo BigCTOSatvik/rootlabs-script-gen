@@ -987,15 +987,26 @@ app.get("/api/proxy-image", async (req, res) => {
 });
 
 // ─── BANNER GENERATION ──────────────────────────────────────────────────────
+// Real Root Labs product jar images - Shopify CDN
+// Real Root Labs product jar images - verified Shopify CDN
+// Mag+Ashwa: update filename below once confirmed from Shopify admin
+const PRODUCT_JARS = {
+  "mag-ashwa":      "https://rootlabs.co/cdn/shop/files/Amazon-removebg-preview.png?v=1752231499&width=600",
+  "alpha-shilajit": "https://rootlabs.co/cdn/shop/files/front-removebg-preview.png?v=1752231467&width=600",
+  "hair-density":   "https://rootlabs.co/cdn/shop/files/Sea_moss.png?v=1732017768&width=600",
+  "sea-moss":       "https://rootlabs.co/cdn/shop/files/Sea_moss.png?v=1732017768&width=600",
+  "turmeric":       "https://rootlabs.co/cdn/shop/files/Turmeric_1.png?v=1734116675&width=600"
+};
+
 const BANNER_PROMPTS = {
   "left-vertical": (product, claim) =>
-    `Premium wellness supplement product photography, clean light cream off-white background, deep forest green supplement jar with ROOT LABS branding, ${product} natural ingredients artistically arranged around the jar (herbs, roots, botanicals), soft natural daylight, clean minimal aesthetic, premium health brand, editorial style, NO text overlays, NO words, ultra high quality photography`,
+    `Premium lifestyle wellness photography, warm cream linen background with soft natural light from the side, ${product} natural botanical ingredients (herbs, plants, roots) arranged artistically on a wooden surface, editorial minimal aesthetic, premium health brand photography, leave lower third open for text overlay, NO text, NO words, NO supplement jars or bottles, portrait orientation 4:7, ultra high quality`,
   "bottom-strip": (product, claim) =>
-    `Wide panoramic lifestyle wellness photography, clean cream background, deep forest green Root Labs supplement jar on the left, ${product} natural ingredients (herbs, plants, roots) scattered elegantly to the right, natural daylight from the side, premium minimal supplement brand, NO text, NO words, ultra high quality`,
+    `Wide panoramic lifestyle wellness photography, warm cream background, ${product} botanical ingredients (fresh herbs, roots, natural elements) scattered elegantly across a clean surface, natural side lighting, premium supplement brand editorial, leave left half open for text, NO text, NO words, NO supplement jars, landscape format 4:1, ultra high quality`,
   "right-badge": (product, claim) =>
-    `Close-up macro photograph of ${product} natural ingredients on a clean cream background, deep forest green color accent, golden amber botanicals, premium wellness brand aesthetic, soft natural lighting, minimal clean composition, NO text, NO words, square, ultra high quality`,
+    `Macro lifestyle photograph, warm cream background, ${product} natural botanical ingredients artfully composed, soft studio light, deep forest green color accents, premium wellness brand, clean minimal square composition, NO text, NO words, NO supplement jars, 1:1 square, ultra high quality`,
   "full-overlay": (product, claim) =>
-    `Premium supplement lifestyle photography portrait, clean cream background fading to deep forest green at bottom, Root Labs supplement jar centered, ${product} natural ingredients floating elegantly around it, soft studio lighting, premium health brand editorial photography, minimal clean aesthetic, NO text, NO words, portrait orientation, ultra high quality`
+    `Premium lifestyle wellness portrait photography, warm cream background fading to deep forest green at bottom, ${product} botanical ingredients floating softly, hands holding natural ingredients blurred in background, editorial health brand, clean and minimal, NO text, NO words, NO supplement jars, portrait 4:7, ultra high quality`
 };
 
 const BANNER_SIZES = {
@@ -1053,7 +1064,7 @@ app.post("/api/generate-banners", async (req, res) => {
       results[type] = imageUrl;
     });
 
-    res.json({ success: true, banners: results });
+    res.json({ success: true, banners: results, jarImage: PRODUCT_JARS[sku] || null });
   } catch (err) {
     console.error("[Banners] Error:", err.message);
     res.status(500).json({ error: err.message });
