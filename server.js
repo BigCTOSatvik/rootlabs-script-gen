@@ -873,26 +873,67 @@ ${safeBenchmark}
 - Full product name only - no internal shorthand
 
 ══ OUTPUT ══════════════════════════════════════════════════════════════════
+This must be a FULL TikTok Live script - same depth and length as a real live cheat sheet.
+Every section must be long enough to actually USE on a live, not a one-line summary.
+
 Return ONLY valid JSON, zero extra text, no markdown fences.
 
+SECTION LENGTH REQUIREMENTS:
+- hook v1/v2/v3: 3-5 full sentences each. Written as spoken words, not descriptions.
+- visualHook: 3-4 sentences. Exact props, timing, what to show on camera.
+- theProblem: 150-250 words. Full monologue - the stat, the mechanism, the analogy, make them feel seen.
+- theSolution: 150-200 words. Full reveal - name the tech, explain why it works, science in plain language.
+- positioning: 200-300 words in 3 paragraphs. Full spoken positioning, not bullet points.
+- socialProof: 100-150 words. Specific outcomes, reviews language, platform credibility.
+- engagementPrompts: 5-6 prompts. Include poll options AND what to say when responses come in.
+- objections: 5 objections. Full 2-4 sentence answers using established analogy language.
+- keyPhrases: 6-8 phrases to repeat throughout the live.
+- demo: Full step-by-step demo. Setup, what to say at each step, what it proves.
+- timeline: Full timeline broken out by Night 1-3, Week 1, Week 2-3, Week 4+.
+- whoItsFor: 5-7 specific audience segments with one-line description each.
+- cta: 80-120 word full CTA monologue. Price, time window, reason, signal ask, hold price.
+- closing: 100-150 word full closing monologue. Two futures, guarantee, community identity, warm ending.
+
 {
-  "creatorVoiceSummary": "One sentence describing this creator voice that anchored every section you wrote",
+  "creatorVoiceSummary": "One sentence on the voice used throughout this script",
   "hook": {
-    "v1": "problem-led hook in their voice - symptom first, no product name",
-    "v2": "curiosity-led hook in their voice - counterintuitive insight that stops the scroll",
-    "v3": "personal story hook in their voice - their own experience with the problem"
+    "v1": "FULL problem-led hook - 3-5 spoken sentences, symptom first, no product name mentioned",
+    "v2": "FULL curiosity-led hook - 3-5 spoken sentences, counterintuitive insight that stops the scroll",
+    "v3": "FULL personal story hook - 3-5 spoken sentences, creator shares their own experience with the problem"
   },
-  "visualHook": "specific camera action for first 5 seconds - must match their content style",
-  "positioning": "3 paragraphs in their voice: problem their audience has, why everything they tried failed (the mechanism), what makes this different (the science simplified to their level)",
-  "socialProof": "proof section in their voice - platform credibility, specific outcome language, tracker scores if relevant",
-  "engagementPrompts": ["prompt 1 adapted to their audience and tone", "prompt 2", "prompt 3"],
-  "objections": [
-    {"q": "objection their specific audience would raise", "a": "answer in their voice using analogy language"},
-    {"q": "second objection", "a": "answer in their voice"},
-    {"q": "third objection", "a": "answer in their voice"}
+  "visualHook": "3-4 sentence camera instruction: exact prop to hold, what to show on screen, precise timing, what text or visual to have ready",
+  "theProblem": "Full 150-250 word problem monologue in creator voice. Why they are struggling. The mechanism. A memorable stat. The key analogy. Make them feel completely understood.",
+  "theSolution": "Full 150-200 word solution reveal. How this product solves the exact problem. Explain the mechanism in plain language. Name the specific technology. The science is the sell.",
+  "positioning": "Full 200-300 word positioning in 3 paragraphs in creator voice: (1) the problem, (2) why everything else failed and the exact mechanism, (3) what makes this different and the science simplified",
+  "socialProof": "Full 100-150 word social proof section. Platform ranking, specific outcome language from reviews, tracker score examples if relevant. Specific, not vague.",
+  "engagementPrompts": [
+    "Type TIRED if [exact relatable situation] - then say: [what to do when they respond]",
+    "Poll: [question] - Type 1 for [option], Type 2 for [option], Type 3 for [option]",
+    "Type TRIED if [second audience segment situation]",
+    "When you see [type of comment] flooding in, say: [exact response to mirror back]",
+    "Type [KEYWORD] and I will [specific thing they get]",
+    "Type [KEYWORD] if [situation that reveals they need this]"
   ],
-  "cta": "flash sale CTA in their voice - specific price, specific time window, believable reason, signal ask",
-  "closing": "closing in their voice - two futures painted, community identity statement, ends with warmth"
+  "objections": [
+    {"q": "Exact objection as viewer would type it in comments", "a": "Full 2-4 sentence answer using the same analogy language already established. Validate first, then reframe."},
+    {"q": "Second objection verbatim", "a": "Full answer"},
+    {"q": "Third objection verbatim", "a": "Full answer"},
+    {"q": "Fourth objection verbatim", "a": "Full answer"},
+    {"q": "Fifth objection verbatim", "a": "Full answer"}
+  ],
+  "keyPhrases": ["Exact phrase 1 to repeat throughout", "Phrase 2", "Phrase 3", "Phrase 4", "Phrase 5", "Phrase 6", "Phrase 7", "Phrase 8"],
+  "demo": "Full demo instructions: what to set up before going live, exact steps during demo, word-for-word what to say at each step, what the demo proves and how to explain it",
+  "timeline": "Night 1-3: [specific what to expect]. Week 1: [specific]. Week 2-3: [specific]. Week 4+: [specific]. Note on patience if needed.",
+  "whoItsFor": [
+    "Stressed Professional - [one sentence description of their exact situation]",
+    "Exhausted Parent - [description]",
+    "Segment 3 - [description]",
+    "Segment 4 - [description]",
+    "Segment 5 - [description]",
+    "Segment 6 - [description]"
+  ],
+  "cta": "Full 80-120 word CTA monologue in creator voice. State the flash price and regular price. Give a specific believable reason for the discount. Name the exact time window. Create urgency without shouting. Ask for a signal (Type IN CART). Promise to hold the price while they check out.",
+  "closing": "Full 100-150 word closing monologue in creator voice. Paint two futures - what life looks like with this vs without it. Mention the guarantee. End with a community identity statement that makes them feel part of something. Warm, not pressured."
 }`;
 
   const response = await client.chat.completions.create({
@@ -902,7 +943,7 @@ Return ONLY valid JSON, zero extra text, no markdown fences.
       { role: "user", content: "Generate the script now." }
     ],
     temperature: 0.8,
-    max_tokens: 3000
+    max_tokens: 5000
   });
 
   const text = response.choices[0].message.content.trim();
