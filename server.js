@@ -3,6 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const axios = require("axios");
+const sharp = require("sharp");
 const OpenAI = require("openai");
 
 const app = express();
@@ -902,7 +903,7 @@ Return ONLY valid JSON, zero extra text, no markdown fences.
       { role: "user", content: "Generate the script now." }
     ],
     temperature: 0.8,
-    max_tokens: 3000
+    max_tokens: 5000
   });
 
   const text = response.choices[0].message.content.trim();
@@ -923,10 +924,10 @@ Return ONLY valid JSON, zero extra text, no markdown fences.
         const retryResponse = await client.chat.completions.create({
           model: "gpt-4o",
           messages: [
-            { role: "user", content: `You are a JSON generator. Return ONLY a valid JSON object with these exact keys: hook (object with v1, v2, v3 strings), visualHook (string), positioning (string), socialProof (string), engagementPrompts (array of 3 strings), objections (array of 3 objects each with q and a strings), cta (string), closing (string), creatorVoiceSummary (string). The script is for @${handle} promoting ${product.label} by Root Labs. Make it personalized and educational. No markdown, no extra text, just the JSON object.` }
+            { role: "user", content: `You are a JSON generator for TikTok Live scripts. Return ONLY valid JSON with ALL these keys: creatorVoiceSummary (string), hook (object: v1 v2 v3 each 3-5 full sentences), visualHook (string 3-4 sentences), theProblem (string 150-200 words), theSolution (string 150-200 words), positioning (string 200-300 words 3 paragraphs), socialProof (string 100-150 words), engagementPrompts (array 5 strings), objections (array 5 objects with q and a), keyPhrases (array 6-8 strings), demo (string full steps), timeline (string Night 1-3 through Week 4+), whoItsFor (array 5-7 strings), cta (string 80-120 words), closing (string 100-150 words). Script for @${handle} promoting ${product.label} by Root Labs. No markdown, no extra text.` }
           ],
           temperature: 0.7,
-          max_tokens: 2500
+          max_tokens: 5000
         });
         const retryText = retryResponse.choices[0].message.content.trim().replace(/```json|```/g, "").trim();
         return JSON.parse(retryText);
