@@ -4,6 +4,7 @@ const cors = require("cors");
 const path = require("path");
 const axios = require("axios");
 const OpenAI = require("openai");
+const bannerCache = new Map();
 
 const app = express();
 app.use(cors());
