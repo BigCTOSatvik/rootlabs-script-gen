@@ -804,13 +804,18 @@ async function renderBannerSection(sc, skuKey) {
     const pct = Math.round((1-fl/reg)*100);
     const pname = sc.product.split(" ").slice(0,3).join(" ").toUpperCase();
     const proxify = url => "/api/proxy-image?url=" + encodeURIComponent(url);
+    // Real Root Labs jar - proxied through our server
+    const jarUrl = data.jarImage ? proxify(data.jarImage) : null;
+    // Jar HTML element - transparent bg PNG floated into banner
+    const jarEl = jarUrl ? `<img src="${jarUrl}" alt="product" style="position:absolute;bottom:0;right:0;width:42%;max-width:200px;object-fit:contain;filter:drop-shadow(0 8px 24px rgba(0,0,0,0.25));z-index:2;pointer-events:none;" loading="lazy"/>` : "";
 
     const bannerDefs = [
       {
         type:"left-vertical", label:"Left Side Banner", hint:"Pin to left of stream",
         html: (imgUrl) => `
-          <div class="banner-wrap" style="aspect-ratio:4/7;">
+          <div class="banner-wrap" style="aspect-ratio:4/7;position:relative;">
             <img class="banner-bg" src="${proxify(imgUrl)}" alt="" loading="lazy"/>
+            ${jarEl}
             <div class="banner-overlay bo-green">
               <div class="banner-top">
                 <div class="banner-brand">ROOT <span>LABS</span></div>
@@ -831,8 +836,9 @@ async function renderBannerSection(sc, skuKey) {
       {
         type:"bottom-strip", label:"Bottom Strip", hint:"Pin to bottom of stream",
         html: (imgUrl) => `
-          <div class="banner-wrap banner-strip" style="aspect-ratio:4/1;">
+          <div class="banner-wrap banner-strip" style="aspect-ratio:4/1;position:relative;">
             <img class="banner-bg" src="${proxify(imgUrl)}" alt="" loading="lazy" style="height:100%;"/>
+            ${jarUrl ? `<img src="${jarUrl}" alt="product" style="position:absolute;right:220px;bottom:0;height:95%;object-fit:contain;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.2));z-index:2;pointer-events:none;" loading="lazy"/>` : ""}
             <div class="banner-overlay" style="background:linear-gradient(to right,rgba(27,67,50,0.96) 45%,rgba(27,67,50,0.6) 70%,transparent);">
               <div style="padding:0 20px;flex:1;">
                 <div style="font-size:9px;font-weight:700;letter-spacing:2px;color:var(--orange);font-family:var(--mono);">ROOT LABS · ${pname}</div>
@@ -849,8 +855,9 @@ async function renderBannerSection(sc, skuKey) {
       {
         type:"right-badge", label:"Price Badge", hint:"Pin to top right corner",
         html: (imgUrl) => `
-          <div class="banner-wrap banner-badge" style="aspect-ratio:1/1;">
+          <div class="banner-wrap banner-badge" style="aspect-ratio:1/1;position:relative;">
             <img class="banner-bg" src="${proxify(imgUrl)}" alt="" loading="lazy"/>
+            ${jarUrl ? `<img src="${jarUrl}" alt="product" style="position:absolute;top:10%;left:50%;transform:translateX(-50%);width:55%;object-fit:contain;filter:drop-shadow(0 8px 20px rgba(0,0,0,0.3));z-index:2;pointer-events:none;" loading="lazy"/>` : ""}
             <div class="banner-overlay" style="background:linear-gradient(135deg,rgba(27,67,50,0.2),rgba(27,67,50,0.88));">
               <div style="position:absolute;top:0;left:0;right:0;height:5px;background:var(--orange);"></div>
               <div style="position:absolute;top:0;left:0;right:0;border:4px solid var(--green);inset:0;pointer-events:none;"></div>
@@ -867,8 +874,9 @@ async function renderBannerSection(sc, skuKey) {
       {
         type:"full-overlay", label:"Full Overlay", hint:"Hold up to camera",
         html: (imgUrl) => `
-          <div class="banner-wrap" style="aspect-ratio:4/7;">
+          <div class="banner-wrap" style="aspect-ratio:4/7;position:relative;">
             <img class="banner-bg" src="${proxify(imgUrl)}" alt="" loading="lazy"/>
+            ${jarUrl ? `<img src="${jarUrl}" alt="product" style="position:absolute;top:25%;left:50%;transform:translateX(-50%);width:60%;object-fit:contain;filter:drop-shadow(0 12px 32px rgba(0,0,0,0.3));z-index:2;pointer-events:none;" loading="lazy"/>` : ""}
             <div class="banner-overlay" style="background:linear-gradient(to bottom,rgba(242,237,228,0.85) 0%,rgba(242,237,228,0) 35%,rgba(242,237,228,0) 55%,rgba(27,67,50,0.97) 100%);">
               <div class="banner-top">
                 <div>
