@@ -368,17 +368,23 @@ function renderOutput(){
     <p class="stx" id="htxt">${sc.hook.v1}</p>
   `,"",0.05));
 
-  c.appendChild(card("02","Visual hook cue",`<p class="stx">${sc.visualHook}</p>`,"",0.1));
-  c.appendChild(card("03","Product positioning",`<p class="stx">${sc.positioning}</p>`,"",0.15));
-  c.appendChild(card("04","Social proof + mechanism",`<p class="stx">${sc.socialProof}</p>`,"",0.2));
-  c.appendChild(card("05","Engagement prompts",`<div class="el">${(sc.engagementPrompts||[]).map(p=>`<div class="ei">${p}</div>`).join("")}</div>`,"",0.25));
-  c.appendChild(card("06","Objection handling",`
+  c.appendChild(card("02","Visual hook cue",`<p class="stx">${sc.visualHook||""}</p>`,"",0.08));
+  if(sc.theProblem) c.appendChild(card("03","The problem",`<p class="stx">${sc.theProblem}</p>`,"",0.1));
+  if(sc.theSolution) c.appendChild(card("04","The solution reveal",`<p class="stx">${sc.theSolution}</p>`,"",0.12));
+  c.appendChild(card("05","Product positioning",`<p class="stx">${sc.positioning}</p>`,"",0.15));
+  c.appendChild(card("06","Social proof + mechanism",`<p class="stx">${sc.socialProof}</p>`,"",0.18));
+  c.appendChild(card("07","Engagement prompts",`<div class="el">${(sc.engagementPrompts||[]).map(p=>`<div class="ei">${p}</div>`).join("")}</div>`,"",0.2));
+  c.appendChild(card("08","Objection handling",`
     <div class="tabs" id="otabs">${sc.objections.map((_,i)=>`<button class="tab${i===0?" ao":""}" onclick="so(${i})">Q${i+1}</button>`).join("")}</div>
     <div class="oq" id="oq">"${sc.objections[0].q}"</div>
     <p class="stx" id="oa">${sc.objections[0].a}</p>
-  `,"obj",0.3));
-  c.appendChild(card("07","Flash sale CTA",`<p class="stx bold">${sc.cta}</p>`,"cta",0.35));
-  c.appendChild(card("08","Closing lines",`<p class="stx">${sc.closing}</p>`,"",0.4));
+  `,"obj",0.22));
+  if(sc.keyPhrases&&sc.keyPhrases.length) c.appendChild(card("09","Key phrases - repeat these",`<div class="el">${sc.keyPhrases.map(p=>`<div class="ei" style="font-weight:600;">"${p}"</div>`).join("")}</div>`,"",0.24));
+  if(sc.demo) c.appendChild(card("10","Demo instructions",`<p class="stx">${sc.demo}</p>`,"",0.26));
+  if(sc.timeline) c.appendChild(card("11","Results timeline",`<p class="stx">${sc.timeline}</p>`,"",0.28));
+  if(sc.whoItsFor&&sc.whoItsFor.length) c.appendChild(card("12","Who it is for",`<div class="el">${sc.whoItsFor.map(w=>`<div class="ei">${w}</div>`).join("")}</div>`,"",0.3));
+  c.appendChild(card("13","Flash sale CTA",`<p class="stx bold">${sc.cta}</p>`,"cta",0.32));
+  c.appendChild(card("14","The close",`<p class="stx">${sc.closing}</p>`,"",0.35));
 }
 
 function sh(i){
@@ -409,17 +415,23 @@ function dlPDF(){
   y=48;
   const sh=(t,rgb)=>{cy(13);doc.setFont("helvetica","bold");doc.setFontSize(7);doc.setTextColor(...(rgb||[200,138,42]));doc.text(t.toUpperCase(),M,y);doc.setDrawColor(...(rgb||[200,138,42]));doc.setLineWidth(0.28);doc.line(M,y+2,W-M,y+2);y+=9;};
   const bt=(text)=>{doc.setFont("helvetica","normal");doc.setFontSize(9.5);doc.setTextColor(28,27,22);const lines=doc.splitTextToSize(text,W-M*2);cy(lines.length*5+5);doc.text(lines,M,y);y+=lines.length*5+5;};
-  sh("Hook options");
+  sh("Hook options (pick one)");
   [sc.hook.v1,sc.hook.v2,sc.hook.v3].forEach((h,i)=>{if(!h)return;cy(7);doc.setFont("helvetica","bold");doc.setFontSize(7.5);doc.setTextColor(100,95,85);doc.text("Option "+(i+1),M,y);y+=5;bt(h);});
-  sh("Visual hook cue");bt(sc.visualHook);
+  sh("Visual hook cue");bt(sc.visualHook||"");
+  if(sc.theProblem){sh("The problem");bt(sc.theProblem);}
+  if(sc.theSolution){sh("The solution reveal");bt(sc.theSolution);}
   sh("Product positioning");bt(sc.positioning);
   sh("Social proof + mechanism");bt(sc.socialProof);
   sh("Engagement prompts",[74,155,111]);
   (sc.engagementPrompts||[]).forEach(p=>bt("- "+p));
   sh("Objection handling",[200,74,42]);
   sc.objections.forEach(o=>{cy(24);doc.setFont("helvetica","bold");doc.setFontSize(9);doc.setTextColor(155,80,50);const ql=doc.splitTextToSize("Q: "+o.q,W-M*2);doc.text(ql,M,y);y+=ql.length*5+2;bt("A: "+o.a);});
+  if(sc.keyPhrases&&sc.keyPhrases.length){sh("Key phrases to repeat",[27,67,50]);sc.keyPhrases.forEach(p=>bt("✓ "+p));}
+  if(sc.demo){sh("Demo instructions");bt(sc.demo);}
+  if(sc.timeline){sh("Results timeline");bt(sc.timeline);}
+  if(sc.whoItsFor&&sc.whoItsFor.length){sh("Who it is for");sc.whoItsFor.forEach(w=>bt("● "+w));}
   sh("Flash sale CTA",[74,155,111]);bt(sc.cta);
-  sh("Closing lines");bt(sc.closing);
+  sh("The close");bt(sc.closing);
   doc.setFont("helvetica","normal");doc.setFontSize(6.5);doc.setTextColor(100,95,88);doc.text("Root Labs Script Engine  ·  Confidential",M,287);
   doc.save(`${curHandle.replace("@","")}_${sc.product.replace(/\s+/g,"_")}_Script.pdf`);
 }
