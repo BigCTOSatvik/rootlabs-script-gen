@@ -873,67 +873,26 @@ ${safeBenchmark}
 - Full product name only - no internal shorthand
 
 ══ OUTPUT ══════════════════════════════════════════════════════════════════
-This must be a FULL TikTok Live script - same depth and length as a real live cheat sheet.
-Every section must be long enough to actually USE on a live, not a one-line summary.
-
 Return ONLY valid JSON, zero extra text, no markdown fences.
 
-SECTION LENGTH REQUIREMENTS:
-- hook v1/v2/v3: 3-5 full sentences each. Written as spoken words, not descriptions.
-- visualHook: 3-4 sentences. Exact props, timing, what to show on camera.
-- theProblem: 150-250 words. Full monologue - the stat, the mechanism, the analogy, make them feel seen.
-- theSolution: 150-200 words. Full reveal - name the tech, explain why it works, science in plain language.
-- positioning: 200-300 words in 3 paragraphs. Full spoken positioning, not bullet points.
-- socialProof: 100-150 words. Specific outcomes, reviews language, platform credibility.
-- engagementPrompts: 5-6 prompts. Include poll options AND what to say when responses come in.
-- objections: 5 objections. Full 2-4 sentence answers using established analogy language.
-- keyPhrases: 6-8 phrases to repeat throughout the live.
-- demo: Full step-by-step demo. Setup, what to say at each step, what it proves.
-- timeline: Full timeline broken out by Night 1-3, Week 1, Week 2-3, Week 4+.
-- whoItsFor: 5-7 specific audience segments with one-line description each.
-- cta: 80-120 word full CTA monologue. Price, time window, reason, signal ask, hold price.
-- closing: 100-150 word full closing monologue. Two futures, guarantee, community identity, warm ending.
-
 {
-  "creatorVoiceSummary": "One sentence on the voice used throughout this script",
+  "creatorVoiceSummary": "One sentence describing this creator voice that anchored every section you wrote",
   "hook": {
-    "v1": "FULL problem-led hook - 3-5 spoken sentences, symptom first, no product name mentioned",
-    "v2": "FULL curiosity-led hook - 3-5 spoken sentences, counterintuitive insight that stops the scroll",
-    "v3": "FULL personal story hook - 3-5 spoken sentences, creator shares their own experience with the problem"
+    "v1": "problem-led hook in their voice - symptom first, no product name",
+    "v2": "curiosity-led hook in their voice - counterintuitive insight that stops the scroll",
+    "v3": "personal story hook in their voice - their own experience with the problem"
   },
-  "visualHook": "3-4 sentence camera instruction: exact prop to hold, what to show on screen, precise timing, what text or visual to have ready",
-  "theProblem": "Full 150-250 word problem monologue in creator voice. Why they are struggling. The mechanism. A memorable stat. The key analogy. Make them feel completely understood.",
-  "theSolution": "Full 150-200 word solution reveal. How this product solves the exact problem. Explain the mechanism in plain language. Name the specific technology. The science is the sell.",
-  "positioning": "Full 200-300 word positioning in 3 paragraphs in creator voice: (1) the problem, (2) why everything else failed and the exact mechanism, (3) what makes this different and the science simplified",
-  "socialProof": "Full 100-150 word social proof section. Platform ranking, specific outcome language from reviews, tracker score examples if relevant. Specific, not vague.",
-  "engagementPrompts": [
-    "Type TIRED if [exact relatable situation] - then say: [what to do when they respond]",
-    "Poll: [question] - Type 1 for [option], Type 2 for [option], Type 3 for [option]",
-    "Type TRIED if [second audience segment situation]",
-    "When you see [type of comment] flooding in, say: [exact response to mirror back]",
-    "Type [KEYWORD] and I will [specific thing they get]",
-    "Type [KEYWORD] if [situation that reveals they need this]"
-  ],
+  "visualHook": "specific camera action for first 5 seconds - must match their content style",
+  "positioning": "3 paragraphs in their voice: problem their audience has, why everything they tried failed (the mechanism), what makes this different (the science simplified to their level)",
+  "socialProof": "proof section in their voice - platform credibility, specific outcome language, tracker scores if relevant",
+  "engagementPrompts": ["prompt 1 adapted to their audience and tone", "prompt 2", "prompt 3"],
   "objections": [
-    {"q": "Exact objection as viewer would type it in comments", "a": "Full 2-4 sentence answer using the same analogy language already established. Validate first, then reframe."},
-    {"q": "Second objection verbatim", "a": "Full answer"},
-    {"q": "Third objection verbatim", "a": "Full answer"},
-    {"q": "Fourth objection verbatim", "a": "Full answer"},
-    {"q": "Fifth objection verbatim", "a": "Full answer"}
+    {"q": "objection their specific audience would raise", "a": "answer in their voice using analogy language"},
+    {"q": "second objection", "a": "answer in their voice"},
+    {"q": "third objection", "a": "answer in their voice"}
   ],
-  "keyPhrases": ["Exact phrase 1 to repeat throughout", "Phrase 2", "Phrase 3", "Phrase 4", "Phrase 5", "Phrase 6", "Phrase 7", "Phrase 8"],
-  "demo": "Full demo instructions: what to set up before going live, exact steps during demo, word-for-word what to say at each step, what the demo proves and how to explain it",
-  "timeline": "Night 1-3: [specific what to expect]. Week 1: [specific]. Week 2-3: [specific]. Week 4+: [specific]. Note on patience if needed.",
-  "whoItsFor": [
-    "Stressed Professional - [one sentence description of their exact situation]",
-    "Exhausted Parent - [description]",
-    "Segment 3 - [description]",
-    "Segment 4 - [description]",
-    "Segment 5 - [description]",
-    "Segment 6 - [description]"
-  ],
-  "cta": "Full 80-120 word CTA monologue in creator voice. State the flash price and regular price. Give a specific believable reason for the discount. Name the exact time window. Create urgency without shouting. Ask for a signal (Type IN CART). Promise to hold the price while they check out.",
-  "closing": "Full 100-150 word closing monologue in creator voice. Paint two futures - what life looks like with this vs without it. Mention the guarantee. End with a community identity statement that makes them feel part of something. Warm, not pressured."
+  "cta": "flash sale CTA in their voice - specific price, specific time window, believable reason, signal ask",
+  "closing": "closing in their voice - two futures painted, community identity statement, ends with warmth"
 }`;
 
   const response = await client.chat.completions.create({
@@ -943,7 +902,7 @@ SECTION LENGTH REQUIREMENTS:
       { role: "user", content: "Generate the script now." }
     ],
     temperature: 0.8,
-    max_tokens: 5000
+    max_tokens: 3000
   });
 
   const text = response.choices[0].message.content.trim();
@@ -1013,6 +972,15 @@ app.post("/api/generate", async (req, res) => {
   }
 });
 
+// ─── BANNER IMAGE SERVING (gpt-image-1 returns base64, serve as PNG) ──────────
+app.get("/api/banner-image/:key", (req, res) => {
+  const buf = bannerCache.get(req.params.key);
+  if (!buf) return res.status(404).send("Banner expired or not found");
+  res.set("Content-Type", "image/png");
+  res.set("Cache-Control", "private, max-age=3600");
+  res.send(buf);
+});
+
 // ─── IMAGE PROXY (avoids DALL-E CORS issues on canvas) ──────────────────────
 app.get("/api/proxy-image", async (req, res) => {
   const { url } = req.query;
@@ -1028,74 +996,96 @@ app.get("/api/proxy-image", async (req, res) => {
 });
 
 // ─── BANNER GENERATION ──────────────────────────────────────────────────────
-// Real Root Labs product jar images - Shopify CDN
-// Real Root Labs product jar images - verified Shopify CDN
-// Mag+Ashwa: update filename below once confirmed from Shopify admin
+
+// Real Root Labs product jar images - Shopify CDN (transparent background PNGs)
 const PRODUCT_JARS = {
-  "mag-ashwa":      "https://rootlabs.co/cdn/shop/files/Amazon-removebg-preview.png?v=1752231499&width=600",
-  "alpha-shilajit": "https://rootlabs.co/cdn/shop/files/front-removebg-preview.png?v=1752231467&width=600",
-  "hair-density":   "https://rootlabs.co/cdn/shop/files/Sea_moss.png?v=1732017768&width=600",
-  "sea-moss":       "https://rootlabs.co/cdn/shop/files/Sea_moss.png?v=1732017768&width=600",
-  "turmeric":       "https://rootlabs.co/cdn/shop/files/Turmeric_1.png?v=1734116675&width=600"
+  "mag-ashwa":      "https://rootlabs.co/cdn/shop/files/Amazon-removebg-preview.png?v=1752231499&width=800",
+  "alpha-shilajit": "https://rootlabs.co/cdn/shop/files/front-removebg-preview.png?v=1752231467&width=800",
+  "hair-density":   "https://rootlabs.co/cdn/shop/files/Sea_moss.png?v=1732017768&width=800",
+  "sea-moss":       "https://rootlabs.co/cdn/shop/files/Sea_moss.png?v=1732017768&width=800",
+  "turmeric":       "https://rootlabs.co/cdn/shop/files/Turmeric_1.png?v=1734116675&width=800"
 };
 
-const BANNER_PROMPTS = {
-  "left-vertical": (product, claim) =>
-    `Premium lifestyle wellness photography, warm cream linen background with soft natural light from the side, ${product} natural botanical ingredients (herbs, plants, roots) arranged artistically on a wooden surface, editorial minimal aesthetic, premium health brand photography, leave lower third open for text overlay, NO text, NO words, NO supplement jars or bottles, portrait orientation 4:7, ultra high quality`,
-  "bottom-strip": (product, claim) =>
-    `Wide panoramic lifestyle wellness photography, warm cream background, ${product} botanical ingredients (fresh herbs, roots, natural elements) scattered elegantly across a clean surface, natural side lighting, premium supplement brand editorial, leave left half open for text, NO text, NO words, NO supplement jars, landscape format 4:1, ultra high quality`,
-  "right-badge": (product, claim) =>
-    `Macro lifestyle photograph, warm cream background, ${product} natural botanical ingredients artfully composed, soft studio light, deep forest green color accents, premium wellness brand, clean minimal square composition, NO text, NO words, NO supplement jars, 1:1 square, ultra high quality`,
-  "full-overlay": (product, claim) =>
-    `Premium lifestyle wellness portrait photography, warm cream background fading to deep forest green at bottom, ${product} botanical ingredients floating softly, hands holding natural ingredients blurred in background, editorial health brand, clean and minimal, NO text, NO words, NO supplement jars, portrait 4:7, ultra high quality`
+// Prompts describe the SCENE around the product - jar already included via edit endpoint
+// gpt-image-1 preserves the jar exactly while filling in a premium scene around it
+const BANNER_SCENE_PROMPTS = {
+  "left-vertical": () =>
+    `Place this supplement jar on a warm cream linen surface. Add soft natural window light from the left, scatter a few dried botanical herbs and green leaves around the base. Shallow depth of field. Premium editorial health brand photography. Keep the jar label, shape and branding exactly as shown. NO text, NO words added.`,
+  "bottom-strip": () =>
+    `Place this supplement jar on a clean dark slate surface with dramatic amber side lighting. Scatter a few botanicals and herbs around it. Wide cinematic composition. Premium wellness brand photography. Keep the jar label, shape and branding exactly as shown. NO text, NO words added.`,
+  "right-badge": () =>
+    `Place this supplement jar centered on a warm cream background. Soft studio lighting with a clean drop shadow beneath. A few botanical leaves and herb sprigs at the base. Minimal editorial composition. Keep the jar label, shape and branding exactly as shown. NO text, NO words added.`,
+  "full-overlay": () =>
+    `Place this supplement jar centered in a full-frame portrait scene. Warm cream background at top fading to deep forest green at bottom. Soft natural light. Botanical ingredients floating gently around the jar. Premium lifestyle editorial photography. Keep the jar label, shape and branding exactly as shown. NO text, NO words added.`
 };
 
-const BANNER_SIZES = {
-  "left-vertical": { w: 1024, h: 1792 },
-  "bottom-strip":  { w: 1792, h: 448  },
-  "right-badge":   { w: 1024, h: 1024 },
-  "full-overlay":  { w: 1024, h: 1792 }
-};
+// Center jar on a square transparent PNG canvas for DALL-E edit endpoint
+async function prepareJarImage(jarUrl, size = 1024) {
+  console.log(`[Banners] Fetching jar: ${jarUrl}`);
+  const resp = await axios.get(jarUrl, { responseType: "arraybuffer", timeout: 15000 });
+  const jarBuf = Buffer.from(resp.data);
+  const meta = await sharp(jarBuf).metadata();
+
+  // Scale jar to 68% of canvas, centred
+  const maxDim = Math.round(size * 0.68);
+  const scale = Math.min(maxDim / meta.width, maxDim / meta.height);
+  const sw = Math.round(meta.width * scale);
+  const sh = Math.round(meta.height * scale);
+  const left = Math.round((size - sw) / 2);
+  const top  = Math.round((size - sh) / 2.1);
+
+  return sharp({
+    create: { width: size, height: size, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } }
+  })
+  .composite([{
+    input: await sharp(jarBuf).resize(sw, sh).ensureAlpha().toBuffer(),
+    left, top
+  }])
+  .png()
+  .toBuffer();
+}
 
 app.post("/api/generate-banners", async (req, res) => {
   const { script, sku, handle } = req.body;
   if (!script || !sku) return res.status(400).json({ error: "script and sku required" });
 
-  const skuLabels = {
-    "mag-ashwa": "Magnesium Ashwagandha",
-    "alpha-shilajit": "Shilajit",
-    "hair-density": "Hair Growth",
-    "sea-moss": "Sea Moss",
-    "turmeric": "Turmeric Curcumin"
-  };
-  const product = skuLabels[sku] || sku;
-  const claim = (script.hook?.v1 || "").slice(0, 60);
+  const jarUrl = PRODUCT_JARS[sku];
+  if (!jarUrl) return res.status(400).json({ error: "No jar image for SKU: " + sku });
 
   try {
+    // Prepare the jar image once - reuse for all 4 banners
+    console.log(`[Banners] Preparing jar image for @${handle} (${sku})...`);
+    const jarCanvas = await prepareJarImage(jarUrl, 1024);
+
     const bannerTypes = ["left-vertical", "bottom-strip", "right-badge", "full-overlay"];
     const results = {};
 
-    // Generate all 4 in parallel
+    // Generate all 4 using gpt-image-1.5 edit endpoint
+    // gpt-image-1.5 preserves branded product visuals across edits - ideal for product scenes
     const promises = bannerTypes.map(async (type) => {
-      const prompt = BANNER_PROMPTS[type](product, claim);
-      const size = BANNER_SIZES[type];
+      const prompt = BANNER_SCENE_PROMPTS[type]();
+      console.log(`[Banners] Editing ${type} for @${handle} with gpt-image-1.5...`);
 
-      // DALL-E 3 supports 1024x1024, 1792x1024, 1024x1792
-      // Map our sizes to valid DALL-E sizes
-      const dalleSize = type === "bottom-strip" ? "1792x1024" :
-                        type === "right-badge"   ? "1024x1024" :
-                                                   "1024x1792";
-      console.log(`[Banners] Generating ${type} banner for @${handle}...`);
-      const response = await client.images.generate({
-        model: "dall-e-3",
+      const { toFile } = require('openai/uploads');
+      const file = await toFile(jarCanvas, "jar.png", { type: "image/png" });
+
+      const response = await client.images.edit({
+        model: "gpt-image-1",
+        image: file,
         prompt: prompt,
         n: 1,
-        size: dalleSize,
-        quality: "hd",
-        style: "natural"
+        size: "1024x1024",
+        quality: "high"
       });
 
-      const imageUrl = response.data[0].url;
+      // gpt-image-1 returns base64, not a URL
+      const b64 = response.data[0].b64_json;
+      const imageBuffer = Buffer.from(b64, "base64");
+      // Store buffer temporarily, serve via a data route
+      const key = `banner_${handle}_${type}_${Date.now()}`;
+      bannerCache.set(key, imageBuffer);
+      setTimeout(() => bannerCache.delete(key), 3600000); // expire after 1hr
+      const imageUrl = `/api/banner-image/${key}`;
       console.log(`[Banners] ${type} done`);
       return { type, imageUrl };
     });
@@ -1105,7 +1095,7 @@ app.post("/api/generate-banners", async (req, res) => {
       results[type] = imageUrl;
     });
 
-    res.json({ success: true, banners: results, jarImage: PRODUCT_JARS[sku] || null });
+    res.json({ success: true, banners: results });
   } catch (err) {
     console.error("[Banners] Error:", err.message);
     res.status(500).json({ error: err.message });
