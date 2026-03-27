@@ -3,7 +3,6 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const axios = require("axios");
-const sharp = require("sharp");
 const OpenAI = require("openai");
 
 const app = express();
@@ -1020,30 +1019,12 @@ const BANNER_SCENE_PROMPTS = {
     `Place this supplement jar centered in a full-frame portrait scene. Warm cream background at top fading to deep forest green at bottom. Soft natural light. Botanical ingredients floating gently around the jar. Premium lifestyle editorial photography. Keep the jar label, shape and branding exactly as shown. NO text, NO words added.`
 };
 
-// Center jar on a square transparent PNG canvas for DALL-E edit endpoint
-async function prepareJarImage(jarUrl, size = 1024) {
+// Fetch jar image directly - Shopify CDN already serves transparent PNGs
+// gpt-image-1 accepts the image as-is and fills the scene around it
+async function prepareJarImage(jarUrl) {
   console.log(`[Banners] Fetching jar: ${jarUrl}`);
   const resp = await axios.get(jarUrl, { responseType: "arraybuffer", timeout: 15000 });
-  const jarBuf = Buffer.from(resp.data);
-  const meta = await sharp(jarBuf).metadata();
-
-  // Scale jar to 68% of canvas, centred
-  const maxDim = Math.round(size * 0.68);
-  const scale = Math.min(maxDim / meta.width, maxDim / meta.height);
-  const sw = Math.round(meta.width * scale);
-  const sh = Math.round(meta.height * scale);
-  const left = Math.round((size - sw) / 2);
-  const top  = Math.round((size - sh) / 2.1);
-
-  return sharp({
-    create: { width: size, height: size, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } }
-  })
-  .composite([{
-    input: await sharp(jarBuf).resize(sw, sh).ensureAlpha().toBuffer(),
-    left, top
-  }])
-  .png()
-  .toBuffer();
+  return Buffer.from(resp.data);
 }
 
 app.post("/api/generate-banners", async (req, res) => {
@@ -1056,7 +1037,7 @@ app.post("/api/generate-banners", async (req, res) => {
   try {
     // Prepare the jar image once - reuse for all 4 banners
     console.log(`[Banners] Preparing jar image for @${handle} (${sku})...`);
-    const jarCanvas = await prepareJarImage(jarUrl, 1024);
+    const jarCanvas = await prepareJarImage(jarUrl);
 
     const bannerTypes = ["left-vertical", "bottom-strip", "right-badge", "full-overlay"];
     const results = {};
